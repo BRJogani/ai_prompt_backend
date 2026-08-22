@@ -1,0 +1,25 @@
+/** @type {import('jest').Config} */
+module.exports = {
+  preset: 'ts-jest',
+  testEnvironment: 'node',
+  rootDir: '.',
+  roots: ['<rootDir>/tests'],
+  testMatch: ['**/*.test.ts'],
+  moduleNameMapper: {
+    '^@config/(.*)$': '<rootDir>/src/config/$1',
+    '^@controllers/(.*)$': '<rootDir>/src/controllers/$1',
+    '^@routes/(.*)$': '<rootDir>/src/routes/$1',
+    '^@services/(.*)$': '<rootDir>/src/services/$1',
+    '^@repositories/(.*)$': '<rootDir>/src/repositories/$1',
+    '^@middleware/(.*)$': '<rootDir>/src/middleware/$1',
+    '^@validators/(.*)$': '<rootDir>/src/validators/$1',
+    '^@utils/(.*)$': '<rootDir>/src/utils/$1',
+    '^@constants/(.*)$': '<rootDir>/src/constants/$1',
+    '^@types/(.*)$': '<rootDir>/src/types/$1',
+    '^@jobs/(.*)$': '<rootDir>/src/jobs/$1',
+    '^@modules/(.*)$': '<rootDir>/src/modules/$1',
+  },
+  setupFiles: ['<rootDir>/tests/setup.ts'],
+  clearMocks: true,
+  verbose: true,
+};

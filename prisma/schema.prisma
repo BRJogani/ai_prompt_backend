@@ -1,0 +1,618 @@
+// =============================================================================
+// Prisma schema for AI Prompt Inspiration App
+// Migrated to MongoDB Atlas
+// =============================================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+// =============================================================================
+// ENUMS
+// =============================================================================
+
+/// Generic active/inactive toggle shared by Category, AiTool, HomeSection.
+enum ActiveStatus {
+  ACTIVE
+  INACTIVE
+}
+
+/// Lifecycle of a Prompt.
+enum PromptStatus {
+  DRAFT
+  REVIEW
+  PUBLISHED
+  ARCHIVED
+}
+
+/// What kind of media a prompt produces / a piece of media is.
+enum ContentType {
+  IMAGE
+  VIDEO
+  BOTH
+}
+
+/// Mirrors ContentType but scoped to a single media asset (never BOTH).
+enum MediaType {
+  IMAGE
+  VIDEO
+}
+
+/// Anonymous device platform, reported by the Flutter app.
+enum DevicePlatform {
+  ANDROID
+  IOS
+  OTHER
+}
+
+/// Platform targeting for ads / app version rows. Includes ALL for
+/// configuration that applies to every platform at once.
+enum TargetPlatform {
+  ANDROID
+  IOS
+  ALL
+}
+
+/// Analytics event taxonomy (Section 13).
+enum AnalyticsEventType {
+  APP_OPEN
+  PROMPT_VIEW
+  PROMPT_COPY
+  PROMPT_FAVORITE
+  PROMPT_UNFAVORITE
+  PROMPT_SHARE
+  VIDEO_VIEW
+  IMAGE_VIEW
+  CATEGORY_VIEW
+  SEARCH
+  AI_TOOL_CLICK
+}
+
+/// Ad unit types (Section 20).
+enum AdType {
+  BANNER
+  INTERSTITIAL
+  REWARDED
+  NATIVE
+  APP_OPEN
+}
+
+/// Ad display frequency strategies (Section 22).
+enum AdFrequencyType {
+  EVERY_N_ACTIONS
+  EVERY_N_MINUTES
+  ON_SCREEN_OPEN
+  MANUAL
+}
+
+/// Dynamic home page section types (Section 15).
+enum HomeSectionType {
+  TRENDING
+  LATEST
+  POPULAR
+  POPULAR_VIDEO
+  POPULAR_IMAGE
+  CATEGORY
+  FEATURED
+}
+
+/// Admin role-based access control (Section 32).
+enum AdminRole {
+  SUPER_ADMIN
+  CONTENT_ADMIN
+  EDITOR
+  ANALYTICS
+}
+
+/// User-submitted content report reasons (Section 35).
+enum ReportReason {
+  INAPPROPRIATE
+  BROKEN_CONTENT
+  WRONG_CATEGORY
+  COPYRIGHT
+  OTHER
+}
+
+/// Content report workflow status (Section 35: VIEW/REVIEW/RESOLVE/DISMISS).
+enum ReportStatus {
+  PENDING
+  REVIEWED
+  RESOLVED
+  DISMISSED
+}
+
+// =============================================================================
+// USERS — anonymous, device-identified (Section 4)
+// =============================================================================
+
+/// An anonymous app installation, identified by a client-generated UUID
+/// sent via the `X-Device-ID` header. No PII is collected.
+model User {
+  id           String         @id @default(auto()) @map("_id") @db.ObjectId
+  uniqueId     String         @unique @map("unique_id")
+  platform     DevicePlatform @default(OTHER)
+  appVersion   String?        @map("app_version")
+  deviceModel  String?        @map("device_model")
+  osVersion    String?        @map("os_version")
+  country      String?
+  language     String?
+  firstSeenAt  DateTime       @default(now()) @map("first_seen_at")
+  lastActiveAt DateTime       @default(now()) @map("last_active_at")
+  createdAt    DateTime       @default(now()) @map("created_at")
+  updatedAt    DateTime       @updatedAt @map("updated_at")
+
+  favorites          Favorite[]
+  history            History[]
+  analyticsEvents    AnalyticsEvent[]
+  reports            Report[]
+  notificationTokens NotificationToken[]
+
+  @@index([platform])
+  @@index([lastActiveAt])
+  @@map("users")
+}
+
+// =============================================================================
+// CATEGORIES (Section 5)
+// =============================================================================
+
+model Category {
+  id            String       @id @default(auto()) @map("_id") @db.ObjectId
+  name          String
+  slug          String       @unique
+  description   String?
+  iconUrl       String?      @map("icon_url")
+  coverImageUrl String?      @map("cover_image_url")
+  status        ActiveStatus @default(ACTIVE)
+  sortOrder     Int          @default(0) @map("sort_order")
+  isFeatured    Boolean      @default(false) @map("is_featured")
+  /// Category-level video control (Section 17). Combined with the global
+  /// VIDEO_ENABLED app setting and each prompt's own videoEnabled flag.
+  videoEnabled  Boolean      @default(true) @map("video_enabled")
+  createdAt     DateTime     @default(now()) @map("created_at")
+  updatedAt     DateTime     @updatedAt @map("updated_at")
+
+  prompts         Prompt[]
+  homeSections    HomeSection[]
+  analyticsEvents AnalyticsEvent[]
+
+  @@index([status])
+  @@index([sortOrder])
+  @@map("categories")
+}
+
+// =============================================================================
+// AI TOOLS (Section 9)
+// =============================================================================
+
+model AiTool {
+  id           String        @id @default(auto()) @map("_id") @db.ObjectId
+  name         String
+  slug         String        @unique
+  description  String?
+  iconUrl      String?       @map("icon_url")
+  websiteUrl   String?       @map("website_url")
+  /// Which content types this tool is relevant for (e.g. an image-only
+  /// tool vs. a video-capable one like Veo).
+  contentTypes ContentType[] @default([BOTH]) @map("content_types")
+  status       ActiveStatus  @default(ACTIVE)
+  sortOrder    Int           @default(0) @map("sort_order")
+  createdAt    DateTime      @default(now()) @map("created_at")
+  updatedAt    DateTime      @updatedAt @map("updated_at")
+
+  prompts         Prompt[]
+  analyticsEvents AnalyticsEvent[]
+
+  @@index([status])
+  @@index([sortOrder])
+  @@map("ai_tools")
+}
+
+// =============================================================================
+// TAGS (Section 10)
+// =============================================================================
+
+model Tag {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  name      String   @unique
+  slug      String   @unique
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  promptTags PromptTag[]
+
+  @@map("tags")
+}
+
+/// Explicit join table so it can carry its own metadata (e.g. createdAt)
+/// and be queried/indexed directly.
+model PromptTag {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  promptId  String   @map("prompt_id") @db.ObjectId
+  tagId     String   @map("tag_id") @db.ObjectId
+  createdAt DateTime @default(now()) @map("created_at")
+
+  prompt Prompt @relation(fields: [promptId], references: [id], onDelete: Cascade)
+  tag    Tag    @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@unique([promptId, tagId])
+  @@index([tagId])
+  @@map("prompt_tags")
+}
+
+// =============================================================================
+// PROMPTS — the core content (Section 6)
+// =============================================================================
+
+model Prompt {
+  id          String       @id @default(auto()) @map("_id") @db.ObjectId
+  title       String
+  slug        String       @unique
+  description String?
+  promptText  String       @map("prompt_text")
+
+  categoryId String   @map("category_id") @db.ObjectId
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+
+  aiToolId String? @map("ai_tool_id") @db.ObjectId
+  aiTool   AiTool? @relation(fields: [aiToolId], references: [id], onDelete: SetNull)
+
+  contentType ContentType  @default(IMAGE) @map("content_type")
+  status      PromptStatus @default(DRAFT)
+  isFeatured  Boolean      @default(false) @map("is_featured")
+  isTrending  Boolean      @default(false) @map("is_trending")
+  sortOrder   Int          @default(0) @map("sort_order")
+
+  /// Prompt-level video control (Section 18) — the final gate in the
+  /// global -> category -> prompt visibility chain (Section 17-18).
+  videoEnabled Boolean @default(true) @map("video_enabled")
+
+  viewCount     Int @default(0) @map("view_count")
+  favoriteCount Int @default(0) @map("favorite_count")
+  copyCount     Int @default(0) @map("copy_count")
+  shareCount    Int @default(0) @map("share_count")
+
+  /// Cached trending score (Section 14): views + favorites*3 + copies*2 +
+  /// shares*5, with time decay applied by the trending recalculation job.
+  /// Stored (not computed on read) so trending queries stay fast at scale.
+  trendingScore Float @default(0) @map("trending_score")
+
+  publishedAt DateTime? @map("published_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  /// Soft-delete timestamp (Section 43). Prefer status = ARCHIVED for
+  /// normal unpublishing; deletedAt is reserved for records pending
+  /// permanent removal while preserving referential integrity in the
+  /// interim.
+  deletedAt   DateTime? @map("deleted_at")
+
+  media           PromptMedia[]
+  tags            PromptTag[]
+  favorites       Favorite[]
+  history         History[]
+  analyticsEvents AnalyticsEvent[]
+  reports         Report[]
+
+  @@index([categoryId])
+  @@index([status])
+  @@index([contentType])
+  @@index([createdAt])
+  @@index([isFeatured])
+  @@index([isTrending])
+  @@index([trendingScore])
+  @@index([status, contentType, publishedAt])
+  @@index([status, categoryId])
+  @@map("prompts")
+}
+
+// =============================================================================
+// PROMPT MEDIA (Section 7-8) — Cloudinary-backed, never stored in DB
+// =============================================================================
+
+model PromptMedia {
+  id                 String    @id @default(auto()) @map("_id") @db.ObjectId
+  promptId           String    @map("prompt_id") @db.ObjectId
+  prompt             Prompt    @relation(fields: [promptId], references: [id], onDelete: Cascade)
+  mediaType          MediaType @map("media_type")
+  cloudinaryPublicId String    @map("cloudinary_public_id")
+  secureUrl          String    @map("secure_url")
+  thumbnailUrl       String?   @map("thumbnail_url")
+  width              Int?
+  height             Int?
+  /// Duration in seconds, video only.
+  duration           Float?
+  format             String?
+  sortOrder          Int       @default(0) @map("sort_order")
+  createdAt          DateTime  @default(now()) @map("created_at")
+
+  @@index([promptId])
+  @@index([mediaType])
+  @@map("prompt_media")
+}
+
+// =============================================================================
+// FAVORITES (Section 11)
+// =============================================================================
+
+model Favorite {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String   @map("user_id") @db.ObjectId
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  promptId  String   @map("prompt_id") @db.ObjectId
+  prompt    Prompt   @relation(fields: [promptId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  /// Prevents duplicate favorites at the database level, not just in
+  /// application logic.
+  @@unique([userId, promptId])
+  @@index([userId])
+  @@index([promptId])
+  @@map("favorites")
+}
+
+// =============================================================================
+// HISTORY (Section 12)
+// =============================================================================
+
+model History {
+  id       String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId   String   @map("user_id") @db.ObjectId
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  promptId String   @map("prompt_id") @db.ObjectId
+  prompt   Prompt   @relation(fields: [promptId], references: [id], onDelete: Cascade)
+  viewedAt DateTime @default(now()) @map("viewed_at")
+
+  /// One row per (user, prompt): re-viewing a prompt updates viewedAt
+  /// via upsert instead of creating unlimited duplicate rows.
+  @@unique([userId, promptId])
+  @@index([userId])
+  @@index([viewedAt])
+  @@map("history")
+}
+
+// =============================================================================
+// ANALYTICS (Section 13)
+// =============================================================================
+
+model AnalyticsEvent {
+  id        String             @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String?            @map("user_id") @db.ObjectId
+  user      User?              @relation(fields: [userId], references: [id], onDelete: SetNull)
+  eventType AnalyticsEventType @map("event_type")
+
+  promptId String? @map("prompt_id") @db.ObjectId
+  prompt   Prompt? @relation(fields: [promptId], references: [id], onDelete: SetNull)
+
+  categoryId String?   @map("category_id") @db.ObjectId
+  category   Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+
+  aiToolId String? @map("ai_tool_id") @db.ObjectId
+  aiTool   AiTool? @relation(fields: [aiToolId], references: [id], onDelete: SetNull)
+
+  /// Free-form event payload (e.g. search query text, share channel).
+  metadata   Json?
+  platform   DevicePlatform?
+  appVersion String?         @map("app_version")
+  createdAt  DateTime        @default(now()) @map("created_at")
+
+  @@index([eventType])
+  @@index([createdAt])
+  @@index([promptId])
+  @@index([userId])
+  @@index([eventType, createdAt])
+  @@map("analytics_events")
+}
+
+// =============================================================================
+// HOME PAGE SYSTEM (Section 15)
+// =============================================================================
+
+model HomeSection {
+  id          String          @id @default(auto()) @map("_id") @db.ObjectId
+  title       String
+  sectionType HomeSectionType @map("section_type")
+
+  categoryId String?   @map("category_id") @db.ObjectId
+  category   Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+
+  /// Max number of items to return for this section. `limit` is a
+  /// reserved word in some SQL dialects, hence the mapped column name.
+  itemLimit Int          @default(10) @map("item_limit")
+  sortOrder Int          @default(0) @map("sort_order")
+  status    ActiveStatus @default(ACTIVE)
+  createdAt DateTime     @default(now()) @map("created_at")
+  updatedAt DateTime     @updatedAt @map("updated_at")
+
+  @@index([status])
+  @@index([sortOrder])
+  @@map("home_sections")
+}
+
+// =============================================================================
+// AD MANAGEMENT (Sections 19-25)
+// =============================================================================
+
+model AdConfig {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+
+  /// Kept as a String (default "ADMOB") rather than an enum so new ad
+  /// networks can be added later without a schema migration.
+  adNetwork String         @default("ADMOB") @map("ad_network")
+  adType    AdType         @map("ad_type")
+  platform  TargetPlatform @default(ALL)
+  adUnitId  String         @map("ad_unit_id")
+  enabled   Boolean        @default(false)
+
+  frequencyType   AdFrequencyType @default(MANUAL) @map("frequency_type")
+  frequencyValue  Int             @default(0) @map("frequency_value")
+  cooldownSeconds Int             @default(0) @map("cooldown_seconds")
+  maxPerSession   Int             @default(0) @map("max_per_session")
+
+  showOnHome         Boolean @default(true) @map("show_on_home")
+  showOnPromptDetail Boolean @default(true) @map("show_on_prompt_detail")
+  showOnCategory     Boolean @default(true) @map("show_on_category")
+  showOnSearch       Boolean @default(true) @map("show_on_search")
+
+  sortOrder Int      @default(0) @map("sort_order")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@unique([adType, platform])
+  @@index([adType])
+  @@index([enabled])
+  @@map("ad_configs")
+}
+
+// =============================================================================
+// REMOTE APP CONFIGURATION & FEATURE FLAGS (Sections 16, 27, 60)
+// =============================================================================
+
+/// Flexible key/value remote configuration store. Serves both simple
+/// app settings (support_email, terms_url, ...) and boolean feature
+/// flags (VIDEO_ENABLED, SEARCH_ENABLED, ...) — `valueType` tells
+/// consumers how to interpret `value`.
+model AppSetting {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  key         String   @unique
+  value       String
+  /// "boolean" | "string" | "json" | "number" — interpretation hint for
+  /// clients/admin UI; validated at the service layer.
+  valueType   String   @default("string") @map("value_type")
+  description String?
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("app_settings")
+}
+
+// =============================================================================
+// APP VERSION MANAGEMENT (Section 26)
+// =============================================================================
+
+model AppVersion {
+  id              String         @id @default(auto()) @map("_id") @db.ObjectId
+  platform        TargetPlatform @unique
+  latestVersion   String         @map("latest_version")
+  minimumVersion  String         @map("minimum_version")
+  forceUpdate     Boolean        @default(false) @map("force_update")
+  updateMessage   String?        @map("update_message")
+  storeUrl        String?        @map("store_url")
+  maintenanceMode Boolean        @default(false) @map("maintenance_mode")
+  createdAt       DateTime       @default(now()) @map("created_at")
+  updatedAt       DateTime       @updatedAt @map("updated_at")
+
+  @@map("app_versions")
+}
+
+// =============================================================================
+// ADMIN — auth, RBAC, audit log (Sections 32, 36)
+// =============================================================================
+
+model AdminUser {
+  id           String    @id @default(auto()) @map("_id") @db.ObjectId
+  email        String    @unique
+  passwordHash String    @map("password_hash")
+  name         String
+  role         AdminRole @default(EDITOR)
+  isActive     Boolean   @default(true) @map("is_active")
+  lastLoginAt  DateTime? @map("last_login_at")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  refreshTokens   AdminRefreshToken[]
+  auditLogs       AuditLog[]
+  reviewedReports Report[]
+
+  @@index([role])
+  @@map("admin_users")
+}
+
+/// Persisted refresh tokens so they can be revoked individually
+/// (logout, password change, security incident) rather than trusting
+/// a stateless JWT until natural expiry.
+model AdminRefreshToken {
+  id        String    @id @default(auto()) @map("_id") @db.ObjectId
+  adminId   String    @map("admin_id") @db.ObjectId
+  admin     AdminUser @relation(fields: [adminId], references: [id], onDelete: Cascade)
+  tokenHash String    @unique @map("token_hash")
+  expiresAt DateTime  @map("expires_at")
+  revokedAt DateTime? @map("revoked_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  @@index([adminId])
+  @@map("admin_refresh_tokens")
+}
+
+model AuditLog {
+  id         String     @id @default(auto()) @map("_id") @db.ObjectId
+  adminId    String?    @map("admin_id") @db.ObjectId
+  admin      AdminUser? @relation(fields: [adminId], references: [id], onDelete: SetNull)
+
+  /// Free-form action identifier (e.g. CREATE_PROMPT, UPDATE_AD_CONFIG).
+  /// Kept as String rather than an enum so new admin actions don't
+  /// require a migration.
+  action     String
+  entityType String     @map("entity_type")
+  entityId   String?    @map("entity_id")
+  metadata   Json?
+  ipAddress  String?    @map("ip_address")
+  createdAt  DateTime   @default(now()) @map("created_at")
+
+  @@index([adminId])
+  @@index([action])
+  @@index([entityType, entityId])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+// =============================================================================
+// CONTENT SAFETY / REPORTING (Section 35)
+// =============================================================================
+
+model Report {
+  id     String  @id @default(auto()) @map("_id") @db.ObjectId
+  userId String? @map("user_id") @db.ObjectId
+  user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  promptId String @map("prompt_id") @db.ObjectId
+  prompt   Prompt @relation(fields: [promptId], references: [id], onDelete: Cascade)
+
+  reason      ReportReason
+  description String?
+  status      ReportStatus @default(PENDING)
+
+  reviewedByAdminId String?    @map("reviewed_by_admin_id") @db.ObjectId
+  reviewedByAdmin   AdminUser? @relation(fields: [reviewedByAdminId], references: [id], onDelete: SetNull)
+  reviewedAt        DateTime?  @map("reviewed_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([status])
+  @@index([promptId])
+  @@index([createdAt])
+  @@map("reports")
+}
+
+// =============================================================================
+// NOTIFICATIONS — prepared for future FCM integration (Section 50)
+// =============================================================================
+
+model NotificationToken {
+  id        String         @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String         @map("user_id") @db.ObjectId
+  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  fcmToken  String         @unique @map("fcm_token")
+  platform  DevicePlatform
+  isActive  Boolean        @default(true) @map("is_active")
+  createdAt DateTime       @default(now()) @map("created_at")
+  updatedAt DateTime       @updatedAt @map("updated_at")
+
+  @@index([userId])
+  @@map("notification_tokens")
+}
