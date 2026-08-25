@@ -30,6 +30,18 @@ export const publicPromptController = {
     return sendSuccess(res, items, 'Latest prompts', 200, buildPaginationMeta(page, limit, total));
   }),
 
+  premium: catchAsync(async (req: Request, res: Response) => {
+    const { page, limit } = req.query as unknown as PaginationQuery;
+    const { items, total } = await publicPromptService.premium(page, limit);
+    return sendSuccess(res, items, 'Premium prompts', 200, buildPaginationMeta(page, limit, total));
+  }),
+
+  free: catchAsync(async (req: Request, res: Response) => {
+    const { page, limit } = req.query as unknown as PaginationQuery;
+    const { items, total } = await publicPromptService.free(page, limit);
+    return sendSuccess(res, items, 'Free prompts', 200, buildPaginationMeta(page, limit, total));
+  }),
+
   popularVideos: catchAsync(async (req: Request, res: Response) => {
     const { page, limit } = req.query as unknown as PaginationQuery;
     const { items, total } = await publicPromptService.popularVideos(page, limit);

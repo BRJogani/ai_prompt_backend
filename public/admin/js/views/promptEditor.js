@@ -96,15 +96,25 @@ export async function renderPromptEditor(container, router, promptId = null) {
               </div>
             </div>
 
-            <!-- Publication Status -->
-            <div class="form-group">
-              <label class="form-label" for="editor-status">Publication Status</label>
-              <select id="editor-status" class="input-select">
-                <option value="PUBLISHED" ${prompt && prompt.status === 'PUBLISHED' ? 'selected' : ''}>PUBLISHED (Live in mobile app)</option>
-                <option value="DRAFT" ${!prompt || prompt.status === 'DRAFT' ? 'selected' : ''}>DRAFT (Hidden)</option>
-                <option value="REVIEW" ${prompt && prompt.status === 'REVIEW' ? 'selected' : ''}>REVIEW</option>
-                <option value="ARCHIVED" ${prompt && prompt.status === 'ARCHIVED' ? 'selected' : ''}>ARCHIVED</option>
-              </select>
+            <!-- Publication Status & Access Tier -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+              <div class="form-group">
+                <label class="form-label" for="editor-status">Publication Status</label>
+                <select id="editor-status" class="input-select">
+                  <option value="PUBLISHED" ${prompt && prompt.status === 'PUBLISHED' ? 'selected' : ''}>PUBLISHED (Live in mobile app)</option>
+                  <option value="DRAFT" ${!prompt || prompt.status === 'DRAFT' ? 'selected' : ''}>DRAFT (Hidden)</option>
+                  <option value="REVIEW" ${prompt && prompt.status === 'REVIEW' ? 'selected' : ''}>REVIEW</option>
+                  <option value="ARCHIVED" ${prompt && prompt.status === 'ARCHIVED' ? 'selected' : ''}>ARCHIVED</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="editor-is-premium">Pricing Tier</label>
+                <select id="editor-is-premium" class="input-select">
+                  <option value="false" ${!prompt || !prompt.isPremium ? 'selected' : ''}>FREE (Standard access)</option>
+                  <option value="true" ${prompt && prompt.isPremium ? 'selected' : ''}>PREMIUM (Exclusive tier)</option>
+                </select>
+              </div>
             </div>
 
             <!-- Main Prompt Text -->
@@ -301,11 +311,14 @@ export async function renderPromptEditor(container, router, promptId = null) {
       return;
     }
 
+    const isPremium = container.querySelector('#editor-is-premium')?.value === 'true';
+
     const payload = {
       title,
       categoryId,
       contentType,
       status,
+      isPremium,
       promptText,
     };
 

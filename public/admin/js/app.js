@@ -6,7 +6,6 @@ import { renderPrompts } from './views/prompts.js';
 import { renderCategories } from './views/categories.js';
 import { renderAiTools } from './views/aiTools.js';
 import { renderTags } from './views/tags.js';
-import { renderHomeSections } from './views/homeSections.js';
 import { renderAppConfig } from './views/appConfig.js';
 import { renderAdConfig } from './views/adConfig.js';
 import { renderAuditLogs } from './views/auditLogs.js';
@@ -112,10 +111,6 @@ class AdminApp {
             </a>
 
             <span class="nav-section-title">Mobile App</span>
-            <a class="nav-item ${this.currentView === 'home-sections' ? 'active' : ''}" data-view="home-sections">
-              <i data-lucide="layers" style="width: 18px; height: 18px;"></i>
-              <span>Home Sections</span>
-            </a>
             <a class="nav-item ${this.currentView === 'app-config' ? 'active' : ''}" data-view="app-config">
               <i data-lucide="sliders" style="width: 18px; height: 18px;"></i>
               <span>App Settings</span>
@@ -270,9 +265,6 @@ class AdminApp {
         break;
       case 'tags':
         renderTags(container, options);
-        break;
-      case 'home-sections':
-        renderHomeSections(container, options);
         break;
       case 'app-config':
         renderAppConfig(container, options);

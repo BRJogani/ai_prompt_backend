@@ -148,6 +148,7 @@ This API powers the **AI Prompt Inspiration Mobile App** (Flutter/iOS/Android) a
           status: { type: 'string', enum: ['DRAFT', 'PUBLISHED', 'REVIEW', 'ARCHIVED'], example: 'PUBLISHED' },
           isFeatured: { type: 'boolean', example: false },
           isTrending: { type: 'boolean', example: true },
+          isPremium: { type: 'boolean', example: false },
           trendingScore: { type: 'number', example: 154.2 },
           viewCount: { type: 'integer', example: 1200 },
           favoriteCount: { type: 'integer', example: 340 },
@@ -181,16 +182,17 @@ This API powers the **AI Prompt Inspiration Mobile App** (Flutter/iOS/Android) a
           createdAt: { type: 'string', format: 'date-time' },
         },
       },
-      HomeSection: {
+      HomeFeed: {
         type: 'object',
         properties: {
-          id: { type: 'string', example: '66c8f12a3b4c5d6e7f8a9b11' },
-          title: { type: 'string', example: 'Trending Inspirations' },
-          sectionType: { type: 'string', enum: ['TRENDING', 'FEATURED', 'LATEST', 'CATEGORY', 'POPULAR_IMAGE', 'POPULAR_VIDEO', 'BANNER'] },
-          categoryId: { type: 'string', nullable: true },
-          itemLimit: { type: 'integer', example: 10 },
-          sortOrder: { type: 'integer', example: 0 },
-          status: { type: 'string', enum: ['ACTIVE', 'INACTIVE'], example: 'ACTIVE' },
+          sections: { type: 'array', items: { type: 'object' } },
+          trending: { type: 'array', items: { $ref: '#/components/schemas/Prompt' } },
+          newPrompts: { type: 'array', items: { $ref: '#/components/schemas/Prompt' } },
+          latest: { type: 'array', items: { $ref: '#/components/schemas/Prompt' } },
+          premium: { type: 'array', items: { $ref: '#/components/schemas/Prompt' } },
+          free: { type: 'array', items: { $ref: '#/components/schemas/Prompt' } },
+          featured: { type: 'array', items: { $ref: '#/components/schemas/Prompt' } },
+          mixed: { type: 'array', items: { $ref: '#/components/schemas/Prompt' } },
         },
       },
       AdConfig: {
@@ -425,6 +427,7 @@ This API powers the **AI Prompt Inspiration Mobile App** (Flutter/iOS/Android) a
           { name: 'aiToolId', in: 'query', schema: { type: 'string' } },
           { name: 'tag', in: 'query', schema: { type: 'string' } },
           { name: 'contentType', in: 'query', schema: { type: 'string', enum: ['IMAGE', 'VIDEO', 'BOTH'] } },
+          { name: 'isPremium', in: 'query', schema: { type: 'boolean' } },
         ],
         responses: {
           200: {
@@ -455,6 +458,58 @@ This API powers the **AI Prompt Inspiration Mobile App** (Flutter/iOS/Android) a
         ],
         responses: {
           200: { description: 'Trending prompts sorted by score' },
+        },
+      },
+    },
+    '/api/v1/prompts/latest': {
+      get: {
+        tags: ['Prompts (Public)'],
+        summary: 'Get latest published prompts',
+        parameters: [
+          { name: 'page', in: 'query', schema: { type: 'integer', default: 1 } },
+          { name: 'limit', in: 'query', schema: { type: 'integer', default: 20 } },
+        ],
+        responses: {
+          200: { description: 'Latest prompts' },
+        },
+      },
+    },
+    '/api/v1/prompts/new': {
+      get: {
+        tags: ['Prompts (Public)'],
+        summary: 'Alias for latest published prompts',
+        parameters: [
+          { name: 'page', in: 'query', schema: { type: 'integer', default: 1 } },
+          { name: 'limit', in: 'query', schema: { type: 'integer', default: 20 } },
+        ],
+        responses: {
+          200: { description: 'New prompts' },
+        },
+      },
+    },
+    '/api/v1/prompts/premium': {
+      get: {
+        tags: ['Prompts (Public)'],
+        summary: 'Get premium tier prompts',
+        parameters: [
+          { name: 'page', in: 'query', schema: { type: 'integer', default: 1 } },
+          { name: 'limit', in: 'query', schema: { type: 'integer', default: 20 } },
+        ],
+        responses: {
+          200: { description: 'Premium prompts list' },
+        },
+      },
+    },
+    '/api/v1/prompts/free': {
+      get: {
+        tags: ['Prompts (Public)'],
+        summary: 'Get free tier prompts',
+        parameters: [
+          { name: 'page', in: 'query', schema: { type: 'integer', default: 1 } },
+          { name: 'limit', in: 'query', schema: { type: 'integer', default: 20 } },
+        ],
+        responses: {
+          200: { description: 'Free prompts list' },
         },
       },
     },
@@ -877,15 +932,15 @@ This API powers the **AI Prompt Inspiration Mobile App** (Flutter/iOS/Android) a
     },
 
     // -----------------------------------------------------------------------
-    // Dynamic Home Feed (Public & Admin)
+    // Automated Home Feed (Public)
     // -----------------------------------------------------------------------
     '/api/v1/home': {
       get: {
-        tags: ['Home Sections (Public)'],
-        summary: 'Get structured home screen feed with dynamic sections (Trending, Featured, Categories, Latest, Banners)',
+        tags: ['Home Feed (Public)'],
+        summary: 'Get automated mixed home screen feed (Trending, New, Premium, Free, Featured, Mixed Feed)',
         responses: {
           200: {
-            description: 'Structured home feed sections with resolved items',
+            description: 'Automated home feed with sections and direct category lists',
             content: {
               'application/json': {
                 schema: {
@@ -896,6 +951,13 @@ This API powers the **AI Prompt Inspiration Mobile App** (Flutter/iOS/Android) a
                       type: 'object',
                       properties: {
                         sections: { type: 'array', items: { type: 'object' } },
+                        trending: { type: 'array', items: { $ref: '#/components/schemas/Prompt' } },
+                        newPrompts: { type: 'array', items: { $ref: '#/components/schemas/Prompt' } },
+                        latest: { type: 'array', items: { $ref: '#/components/schemas/Prompt' } },
+                        premium: { type: 'array', items: { $ref: '#/components/schemas/Prompt' } },
+                        free: { type: 'array', items: { $ref: '#/components/schemas/Prompt' } },
+                        featured: { type: 'array', items: { $ref: '#/components/schemas/Prompt' } },
+                        mixed: { type: 'array', items: { $ref: '#/components/schemas/Prompt' } },
                       },
                     },
                   },
@@ -904,39 +966,6 @@ This API powers the **AI Prompt Inspiration Mobile App** (Flutter/iOS/Android) a
             },
           },
         },
-      },
-    },
-    '/api/v1/admin/home-sections': {
-      get: {
-        tags: ['Home Sections (Admin)'],
-        summary: 'Admin list configured home page sections',
-        security: [{ bearerAuth: [] }],
-        responses: { 200: { description: 'Home sections list' } },
-      },
-      post: {
-        tags: ['Home Sections (Admin)'],
-        summary: 'Create a new home page section',
-        security: [{ bearerAuth: [] }],
-        requestBody: {
-          required: true,
-          content: {
-            'application/json': {
-              schema: {
-                type: 'object',
-                required: ['title', 'sectionType'],
-                properties: {
-                  title: { type: 'string', example: 'Trending Today' },
-                  sectionType: { type: 'string', enum: ['TRENDING', 'FEATURED', 'LATEST', 'CATEGORY', 'POPULAR_IMAGE', 'POPULAR_VIDEO', 'BANNER'] },
-                  categoryId: { type: 'string', nullable: true },
-                  itemLimit: { type: 'integer', default: 10 },
-                  sortOrder: { type: 'integer', default: 0 },
-                  status: { type: 'string', enum: ['ACTIVE', 'INACTIVE'], default: 'ACTIVE' },
-                },
-              },
-            },
-          },
-        },
-        responses: { 201: { description: 'Home section created' } },
       },
     },
 

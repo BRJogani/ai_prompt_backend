@@ -135,12 +135,6 @@ export const api = {
   updateTag: (id, data) => apiRequest(`/admin/tags/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   deleteTag: (id) => apiRequest(`/admin/tags/${id}`, { method: 'DELETE' }),
 
-  // Home Sections
-  getHomeSections: () => apiRequest('/admin/home-sections'),
-  createHomeSection: (data) => apiRequest('/admin/home-sections', { method: 'POST', body: JSON.stringify(data) }),
-  updateHomeSection: (id, data) => apiRequest(`/admin/home-sections/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
-  deleteHomeSection: (id) => apiRequest(`/admin/home-sections/${id}`, { method: 'DELETE' }),
-
   // App Config & Settings
   getAppConfig: () => apiRequest('/admin/app-config'),
   updateAppSetting: (key, value) => apiRequest(`/admin/app-config/${key}`, { method: 'PATCH', body: JSON.stringify({ value }) }),

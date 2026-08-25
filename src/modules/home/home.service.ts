@@ -1,188 +1,113 @@
-import { ActiveStatus } from '@prisma/client';
-import { homeSectionRepository } from './home-section.repository';
 import { findPublicPromptsWithVideoGate } from '@modules/prompts/prompt-visibility.service';
-import { categoryRepository } from '@modules/categories/category.repository';
-import { NotFoundError, ValidationError } from '@utils/ApiError';
-import { recordAuditLog } from '@services/audit.service';
-import { AUDIT_ACTIONS } from '@constants/adminActions';
-
-interface HomeSectionInput {
-  title: string;
-  sectionType: 'TRENDING' | 'LATEST' | 'POPULAR' | 'POPULAR_VIDEO' | 'POPULAR_IMAGE' | 'CATEGORY' | 'FEATURED';
-  categoryId?: string;
-  itemLimit?: number;
-  sortOrder?: number;
-}
-
-export const homeSectionAdminService = {
-  async create(input: HomeSectionInput, adminId: string, ipAddress?: string) {
-    if (input.categoryId) {
-      const category = await categoryRepository.findById(input.categoryId);
-      if (!category) throw new ValidationError('categoryId does not reference an existing category');
-    }
-
-    const section = await homeSectionRepository.create({
-      title: input.title,
-      sectionType: input.sectionType,
-      ...(input.categoryId ? { category: { connect: { id: input.categoryId } } } : {}),
-      itemLimit: input.itemLimit ?? 10,
-      sortOrder: input.sortOrder ?? 0,
-    });
-
-    await recordAuditLog({
-      adminId,
-      action: AUDIT_ACTIONS.CREATE_HOME_SECTION,
-      entityType: 'HomeSection',
-      entityId: section.id,
-      ipAddress,
-    });
-
-    return section;
-  },
-
-  async update(id: string, input: Partial<HomeSectionInput>, adminId: string, ipAddress?: string) {
-    const existing = await homeSectionRepository.findById(id);
-    if (!existing) throw new NotFoundError('Home section not found');
-
-    if (input.categoryId) {
-      const category = await categoryRepository.findById(input.categoryId);
-      if (!category) throw new ValidationError('categoryId does not reference an existing category');
-    }
-
-    const { categoryId, ...rest } = input;
-
-    const updated = await homeSectionRepository.update(id, {
-      ...rest,
-      ...(categoryId !== undefined
-        ? categoryId
-          ? { category: { connect: { id: categoryId } } }
-          : { category: { disconnect: true } }
-        : {}),
-    });
-
-    await recordAuditLog({
-      adminId,
-      action: AUDIT_ACTIONS.UPDATE_HOME_SECTION,
-      entityType: 'HomeSection',
-      entityId: id,
-      ipAddress,
-    });
-
-    return updated;
-  },
-
-  async setStatus(id: string, status: ActiveStatus, adminId: string, ipAddress?: string) {
-    const existing = await homeSectionRepository.findById(id);
-    if (!existing) throw new NotFoundError('Home section not found');
-
-    const updated = await homeSectionRepository.update(id, { status });
-
-    await recordAuditLog({
-      adminId,
-      action: AUDIT_ACTIONS.UPDATE_HOME_SECTION,
-      entityType: 'HomeSection',
-      entityId: id,
-      metadata: { status },
-      ipAddress,
-    });
-
-    return updated;
-  },
-
-  async remove(id: string, adminId: string, ipAddress?: string) {
-    const existing = await homeSectionRepository.findById(id);
-    if (!existing) throw new NotFoundError('Home section not found');
-
-    await homeSectionRepository.delete(id);
-
-    await recordAuditLog({
-      adminId,
-      action: AUDIT_ACTIONS.DELETE_HOME_SECTION,
-      entityType: 'HomeSection',
-      entityId: id,
-      ipAddress,
-    });
-  },
-
-  async list() {
-    return homeSectionRepository.listAll();
-  },
-
-  async getById(id: string) {
-    const section = await homeSectionRepository.findById(id);
-    if (!section) throw new NotFoundError('Home section not found');
-    return section;
-  },
-};
 
 /**
- * Resolves each active, admin-configured section into its actual prompt
- * list. This is what lets the admin reorder, rename, resize, or retarget
- * the home feed without a Flutter release (Section 15/59).
+ * Automated Home Feed Service
+ *
+ * Automatically generates a rich, mixed client-side home feed combining:
+ * 1. Trending Prompts (highest trending score)
+ * 2. New / Latest Prompts (most recently published)
+ * 3. Premium Prompts (curated premium tier)
+ * 4. Free Prompts (accessible without restriction)
+ * 5. Featured Prompts (handpicked spotlight prompts)
+ * 6. Mixed Interleaved Feed (smart deduplicated stream for waterfall/infinite grids)
+ *
+ * Provides both structured `sections` (for horizontal scroll carousels)
+ * and direct lists (`trending`, `newPrompts`, `premium`, `free`, `mixed`).
  */
 export const homePublicService = {
-  async getHome() {
-    const sections = await homeSectionRepository.listActive();
+  async getHome(limitPerSection = 10) {
+    const [trending, latest, premium, free, featured] = await Promise.all([
+      findPublicPromptsWithVideoGate({ page: 1, limit: limitPerSection, sort: 'trending' }),
+      findPublicPromptsWithVideoGate({ page: 1, limit: limitPerSection, sort: 'latest' }),
+      findPublicPromptsWithVideoGate({ page: 1, limit: limitPerSection, isPremium: true, sort: 'latest' }),
+      findPublicPromptsWithVideoGate({ page: 1, limit: limitPerSection, isPremium: false, sort: 'latest' }),
+      findPublicPromptsWithVideoGate({ page: 1, limit: limitPerSection, isFeatured: true, sort: 'latest' }),
+    ]);
 
-    const resolved = await Promise.all(
-      sections.map(async (section) => {
-        const limit = section.itemLimit;
-        let prompts;
-
-        switch (section.sectionType) {
-          case 'TRENDING':
-            prompts = (await findPublicPromptsWithVideoGate({ page: 1, limit, sort: 'trending' })).items;
-            break;
-          case 'POPULAR':
-            prompts = (await findPublicPromptsWithVideoGate({ page: 1, limit, sort: 'popular' })).items;
-            break;
-          case 'POPULAR_VIDEO':
-            // If video is globally disabled, the gate's WHERE clause excludes
-            // every VIDEO-only prompt, so this section naturally resolves to
-            // an empty list rather than needing special-case handling here.
-            prompts = (
-              await findPublicPromptsWithVideoGate({ page: 1, limit, sort: 'popular', contentType: 'VIDEO' })
-            ).items;
-            break;
-          case 'POPULAR_IMAGE':
-            prompts = (
-              await findPublicPromptsWithVideoGate({ page: 1, limit, sort: 'popular', contentType: 'IMAGE' })
-            ).items;
-            break;
-          case 'FEATURED':
-            prompts = (await findPublicPromptsWithVideoGate({ page: 1, limit, isFeatured: true, sort: 'latest' }))
-              .items;
-            break;
-          case 'CATEGORY':
-            prompts = section.categoryId
-              ? (
-                  await findPublicPromptsWithVideoGate({
-                    page: 1,
-                    limit,
-                    categoryId: section.categoryId,
-                    sort: 'latest',
-                  })
-                ).items
-              : [];
-            break;
-          case 'LATEST':
-          default:
-            prompts = (await findPublicPromptsWithVideoGate({ page: 1, limit, sort: 'latest' })).items;
-            break;
-        }
-
-        return {
-          id: section.id,
-          title: section.title,
-          sectionType: section.sectionType,
-          categoryId: section.categoryId,
-          prompts,
-        };
-      }),
+    // Build smart interleaved mixed feed without duplicate prompts
+    const seenIds = new Set<string>();
+    const mixed: any[] = [];
+    const maxLen = Math.max(
+      trending.items.length,
+      latest.items.length,
+      premium.items.length,
+      free.items.length,
+      featured.items.length,
     );
 
-    return resolved;
+    for (let i = 0; i < maxLen; i++) {
+      if (featured.items[i] && !seenIds.has(featured.items[i].id)) {
+        seenIds.add(featured.items[i].id);
+        mixed.push(featured.items[i]);
+      }
+      if (trending.items[i] && !seenIds.has(trending.items[i].id)) {
+        seenIds.add(trending.items[i].id);
+        mixed.push(trending.items[i]);
+      }
+      if (latest.items[i] && !seenIds.has(latest.items[i].id)) {
+        seenIds.add(latest.items[i].id);
+        mixed.push(latest.items[i]);
+      }
+      if (premium.items[i] && !seenIds.has(premium.items[i].id)) {
+        seenIds.add(premium.items[i].id);
+        mixed.push(premium.items[i]);
+      }
+      if (free.items[i] && !seenIds.has(free.items[i].id)) {
+        seenIds.add(free.items[i].id);
+        mixed.push(free.items[i]);
+      }
+    }
+
+    const sections = [
+      {
+        id: 'trending',
+        title: 'Trending Prompts',
+        sectionType: 'TRENDING',
+        prompts: trending.items,
+      },
+      {
+        id: 'new_prompts',
+        title: 'New Prompts',
+        sectionType: 'LATEST',
+        prompts: latest.items,
+      },
+      {
+        id: 'premium',
+        title: 'Premium Prompts',
+        sectionType: 'PREMIUM',
+        prompts: premium.items,
+      },
+      {
+        id: 'free',
+        title: 'Free Prompts',
+        sectionType: 'FREE',
+        prompts: free.items,
+      },
+      {
+        id: 'featured',
+        title: 'Featured Prompts',
+        sectionType: 'FEATURED',
+        prompts: featured.items,
+      },
+      {
+        id: 'mixed',
+        title: 'Mixed Feed',
+        sectionType: 'MIXED',
+        prompts: mixed,
+      },
+    ];
+
+    return {
+      sections,
+      trending: trending.items,
+      newPrompts: latest.items,
+      latest: latest.items,
+      premium: premium.items,
+      free: free.items,
+      featured: featured.items,
+      mixed,
+    };
   },
 };
 
-export default { homeSectionAdminService, homePublicService };
+export default { homePublicService };

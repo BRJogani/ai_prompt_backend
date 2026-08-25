@@ -10,7 +10,7 @@ import { publicPromptController } from '@modules/prompts/prompt-public.controlle
 import { mediaRouter } from '@modules/media/media.routes';
 import favoriteRoutes from '@modules/favorites/favorite.routes';
 import historyRoutes from '@modules/history/history.routes';
-import { adminHomeSectionRouter, publicHomeRouter } from '@modules/home/home.routes';
+import { publicHomeRouter } from '@modules/home/home.routes';
 import { publicAnalyticsRouter, adminAnalyticsRouter } from '@modules/analytics/analytics.routes';
 import { adminAppConfigRouter, publicAppConfigRouter } from '@modules/app-config/app-config.routes';
 import { adminAppVersionRouter, publicAppVersionRouter } from '@modules/app-version/app-version.routes';
@@ -39,9 +39,6 @@ router.use('/admin/ai-tools', adminAiToolRouter);
 router.use('/admin/tags', adminTagRouter);
 router.use('/admin/prompts', adminPromptRouter); // includes nested /:promptId/media
 router.use('/admin/media', mediaRouter); // standalone /:mediaId replace/delete
-
-// Admin — home page sections (Phase 5)
-router.use('/admin/home-sections', adminHomeSectionRouter);
 
 // Admin — trending recalculation trigger (Phase 6)
 router.use('/admin/analytics', adminAnalyticsRouter);

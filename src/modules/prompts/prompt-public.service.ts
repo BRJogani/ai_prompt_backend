@@ -9,6 +9,7 @@ interface BrowseParams {
   categoryId?: string;
   aiToolId?: string;
   contentType?: ContentType;
+  isPremium?: boolean;
   sort?: PromptSortOption;
 }
 
@@ -27,6 +28,14 @@ export const publicPromptService = {
 
   latest(page: number, limit: number) {
     return findPublicPromptsWithVideoGate({ page, limit, sort: 'latest' });
+  },
+
+  premium(page: number, limit: number) {
+    return findPublicPromptsWithVideoGate({ page, limit, isPremium: true, sort: 'latest' });
+  },
+
+  free(page: number, limit: number) {
+    return findPublicPromptsWithVideoGate({ page, limit, isPremium: false, sort: 'latest' });
   },
 
   /**
@@ -58,3 +67,4 @@ export const publicPromptService = {
 };
 
 export default publicPromptService;
+

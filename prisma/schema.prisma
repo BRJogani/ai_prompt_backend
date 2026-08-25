@@ -90,16 +90,6 @@ enum AdFrequencyType {
   MANUAL
 }
 
-/// Dynamic home page section types (Section 15).
-enum HomeSectionType {
-  TRENDING
-  LATEST
-  POPULAR
-  POPULAR_VIDEO
-  POPULAR_IMAGE
-  CATEGORY
-  FEATURED
-}
 
 /// Admin role-based access control (Section 32).
 enum AdminRole {
@@ -178,7 +168,6 @@ model Category {
   updatedAt     DateTime     @updatedAt @map("updated_at")
 
   prompts         Prompt[]
-  homeSections    HomeSection[]
   analyticsEvents AnalyticsEvent[]
 
   @@index([status])
@@ -266,6 +255,7 @@ model Prompt {
   status      PromptStatus @default(DRAFT)
   isFeatured  Boolean      @default(false) @map("is_featured")
   isTrending  Boolean      @default(false) @map("is_trending")
+  isPremium   Boolean      @default(false) @map("is_premium")
   sortOrder   Int          @default(0) @map("sort_order")
 
   /// Prompt-level video control (Section 18) — the final gate in the
@@ -304,6 +294,7 @@ model Prompt {
   @@index([createdAt])
   @@index([isFeatured])
   @@index([isTrending])
+  @@index([isPremium])
   @@index([trendingScore])
   @@index([status, contentType, publishedAt])
   @@index([status, categoryId])
@@ -408,30 +399,6 @@ model AnalyticsEvent {
   @@map("analytics_events")
 }
 
-// =============================================================================
-// HOME PAGE SYSTEM (Section 15)
-// =============================================================================
-
-model HomeSection {
-  id          String          @id @default(auto()) @map("_id") @db.ObjectId
-  title       String
-  sectionType HomeSectionType @map("section_type")
-
-  categoryId String?   @map("category_id") @db.ObjectId
-  category   Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
-
-  /// Max number of items to return for this section. `limit` is a
-  /// reserved word in some SQL dialects, hence the mapped column name.
-  itemLimit Int          @default(10) @map("item_limit")
-  sortOrder Int          @default(0) @map("sort_order")
-  status    ActiveStatus @default(ACTIVE)
-  createdAt DateTime     @default(now()) @map("created_at")
-  updatedAt DateTime     @updatedAt @map("updated_at")
-
-  @@index([status])
-  @@index([sortOrder])
-  @@map("home_sections")
-}
 
 // =============================================================================
 // AD MANAGEMENT (Sections 19-25)

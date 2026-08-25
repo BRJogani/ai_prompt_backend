@@ -21,6 +21,7 @@ export const createPromptSchema = z.object({
   sortOrder: z.number().int().min(0).optional(),
   isFeatured: z.boolean().optional(),
   isTrending: z.boolean().optional(),
+  isPremium: z.boolean().optional(),
   videoEnabled: z.boolean().optional(),
   /** Tag names or slugs — resolved to Tag rows, creating any that don't exist yet. */
   tagSlugs: z.array(z.string().min(1)).max(20).optional(),
@@ -34,9 +35,10 @@ export const promptFlagsSchema = z
   .object({
     isFeatured: z.boolean().optional(),
     isTrending: z.boolean().optional(),
+    isPremium: z.boolean().optional(),
   })
-  .refine((data) => data.isFeatured !== undefined || data.isTrending !== undefined, {
-    message: 'At least one of isFeatured or isTrending must be provided',
+  .refine((data) => data.isFeatured !== undefined || data.isTrending !== undefined || data.isPremium !== undefined, {
+    message: 'At least one of isFeatured, isTrending, or isPremium must be provided',
   });
 export type PromptFlagsInput = z.infer<typeof promptFlagsSchema>;
 
@@ -58,6 +60,7 @@ export const promptListQuerySchema = paginationQuerySchema.extend({
   contentType: contentTypeEnum.optional(),
   isFeatured: z.coerce.boolean().optional(),
   isTrending: z.coerce.boolean().optional(),
+  isPremium: z.coerce.boolean().optional(),
   search: z.string().min(1).max(120).optional(),
 });
 export type PromptListQuery = z.infer<typeof promptListQuerySchema>;
@@ -71,6 +74,7 @@ export const publicPromptListQuerySchema = paginationQuerySchema.extend({
   categoryId: idSchema.optional(),
   aiToolId: idSchema.optional(),
   contentType: contentTypeEnum.optional(),
+  isPremium: z.coerce.boolean().optional(),
   sort: sortEnum.default('latest'),
 });
 export type PublicPromptListQuery = z.infer<typeof publicPromptListQuerySchema>;
@@ -79,3 +83,4 @@ export const promptSearchQuerySchema = paginationQuerySchema.extend({
   q: z.string().min(1, 'q is required').max(200),
 });
 export type PromptSearchQuery = z.infer<typeof promptSearchQuerySchema>;
+

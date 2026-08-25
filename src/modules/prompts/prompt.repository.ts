@@ -78,6 +78,7 @@ export const promptRepository = {
     contentType?: ContentType;
     isFeatured?: boolean;
     isTrending?: boolean;
+    isPremium?: boolean;
     search?: string;
     page: number;
     limit: number;
@@ -95,6 +96,7 @@ export const promptRepository = {
         ...(params.contentType ? [{ contentType: params.contentType }] : []),
         ...(params.isFeatured !== undefined ? [{ isFeatured: params.isFeatured }] : []),
         ...(params.isTrending !== undefined ? [{ isTrending: params.isTrending }] : []),
+        ...(params.isPremium !== undefined ? [{ isPremium: params.isPremium }] : []),
         ...(params.search
           ? [
               {
@@ -137,6 +139,7 @@ export const promptRepository = {
     aiToolId?: string;
     contentType?: ContentType;
     isFeatured?: boolean;
+    isPremium?: boolean;
     sort?: PromptSortOption;
     search?: string;
     /** Merged in via AND — used by the video-visibility gate (Sections 16-18). */
@@ -154,6 +157,7 @@ export const promptRepository = {
         ...(params.aiToolId ? [{ aiToolId: params.aiToolId }] : []),
         ...(params.contentType ? [{ contentType: params.contentType }] : []),
         ...(params.isFeatured !== undefined ? [{ isFeatured: params.isFeatured }] : []),
+        ...(params.isPremium !== undefined ? [{ isPremium: params.isPremium }] : []),
         ...(params.search
           ? [
               {

@@ -12,6 +12,7 @@ let state = {
   search: '',
   categoryId: '',
   status: '',
+  isPremium: '',
 };
 
 export async function renderPrompts(container, router, options = {}) {
@@ -20,6 +21,7 @@ export async function renderPrompts(container, router, options = {}) {
     state.search = '';
     state.categoryId = '';
     state.status = '';
+    state.isPremium = '';
   }
 
   container.innerHTML = `
@@ -60,7 +62,13 @@ export async function renderPrompts(container, router, options = {}) {
             <option value="ARCHIVED" ${state.status === 'ARCHIVED' ? 'selected' : ''}>Archived</option>
           </select>
 
-          ${state.search || state.categoryId || state.status ? `
+          <select id="filter-premium" class="input-select" style="width: auto; min-width: 130px;">
+            <option value="" ${state.isPremium === '' ? 'selected' : ''}>All Tiers</option>
+            <option value="false" ${state.isPremium === 'false' ? 'selected' : ''}>Free</option>
+            <option value="true" ${state.isPremium === 'true' ? 'selected' : ''}>⭐ Premium</option>
+          </select>
+
+          ${state.search || state.categoryId || state.status || state.isPremium ? `
             <button class="btn btn-secondary btn-sm" id="btn-clear-filters">
               <i data-lucide="x" style="width: 14px; height: 14px;"></i> Clear
             </button>
@@ -116,6 +124,7 @@ export async function renderPrompts(container, router, options = {}) {
     state.search = '';
     state.categoryId = '';
     state.status = '';
+    state.isPremium = '';
     state.page = 1;
     renderPrompts(container, router);
   });
@@ -140,6 +149,12 @@ export async function renderPrompts(container, router, options = {}) {
 
   container.querySelector('#filter-status')?.addEventListener('change', (e) => {
     state.status = e.target.value;
+    state.page = 1;
+    fetchPrompts(container, router);
+  });
+
+  container.querySelector('#filter-premium')?.addEventListener('change', (e) => {
+    state.isPremium = e.target.value;
     state.page = 1;
     fetchPrompts(container, router);
   });
@@ -179,6 +194,7 @@ async function fetchPrompts(container, router) {
       ...(state.search ? { search: state.search } : {}),
       ...(state.categoryId ? { categoryId: state.categoryId } : {}),
       ...(state.status ? { status: state.status } : {}),
+      ...(state.isPremium !== '' ? { isPremium: state.isPremium === 'true' } : {}),
     };
 
     const res = await api.getPrompts(params);
@@ -206,11 +222,16 @@ async function fetchPrompts(container, router) {
               <img src="${thumbUrl}" class="thumbnail-preview" alt="Thumbnail" onerror="this.src='https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=100'" />
             </td>
             <td>
-              <div style="font-weight: 600; color: var(--text-main); max-width: 320px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${p.title}</div>
+              <div style="font-weight: 600; color: var(--text-main); max-width: 320px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                ${p.isPremium ? '<span style="color: #fbbf24; margin-right: 4px;" title="Premium Prompt">★</span>' : ''}${p.title}
+              </div>
               <div style="font-size: 0.78rem; color: var(--text-muted);">${p.category ? p.category.name : 'Uncategorized'} &bull; /${p.slug}</div>
             </td>
             <td>
-              <span class="badge badge-cyan">${p.contentType || 'IMAGE'}</span>
+              <div style="display: flex; gap: 4px; flex-wrap: wrap;">
+                <span class="badge badge-cyan">${p.contentType || 'IMAGE'}</span>
+                ${p.isPremium ? '<span class="badge" style="background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.4);">PREMIUM</span>' : '<span class="badge" style="background: rgba(148, 163, 184, 0.15); color: #94a3b8;">FREE</span>'}
+              </div>
             </td>
             <td>
               <span class="badge ${p.status === 'PUBLISHED' ? 'badge-success' : p.status === 'DRAFT' ? 'badge-secondary' : 'badge-warning'}">

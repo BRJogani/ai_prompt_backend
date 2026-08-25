@@ -12,6 +12,9 @@ const router = Router();
 router.get('/trending', validate(paginationQuerySchema, 'query'), publicPromptController.trending);
 router.get('/popular', validate(paginationQuerySchema, 'query'), publicPromptController.popular);
 router.get('/latest', validate(paginationQuerySchema, 'query'), publicPromptController.latest);
+router.get('/new', validate(paginationQuerySchema, 'query'), publicPromptController.latest);
+router.get('/premium', validate(paginationQuerySchema, 'query'), publicPromptController.premium);
+router.get('/free', validate(paginationQuerySchema, 'query'), publicPromptController.free);
 router.get('/popular-videos', validate(paginationQuerySchema, 'query'), publicPromptController.popularVideos);
 router.get('/popular-images', validate(paginationQuerySchema, 'query'), publicPromptController.popularImages);
 router.get('/featured', validate(paginationQuerySchema, 'query'), publicPromptController.featured);
@@ -21,3 +24,4 @@ router.get('/', validate(publicPromptListQuerySchema, 'query'), publicPromptCont
 router.get('/:id', validate(idParamSchema(), 'params'), publicPromptController.getById);
 
 export default router;
+

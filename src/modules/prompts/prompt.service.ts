@@ -20,6 +20,7 @@ interface PromptInput {
   sortOrder?: number;
   isFeatured?: boolean;
   isTrending?: boolean;
+  isPremium?: boolean;
   videoEnabled?: boolean;
   tagSlugs?: string[];
 }
@@ -71,6 +72,7 @@ export const promptService = {
       sortOrder: input.sortOrder ?? 0,
       isFeatured: input.isFeatured ?? false,
       isTrending: input.isTrending ?? false,
+      isPremium: input.isPremium ?? false,
       videoEnabled: input.videoEnabled ?? true,
       ...(tags.length ? { tags: { create: tags.map((tag) => ({ tagId: tag.id })) } } : {}),
     });
@@ -154,6 +156,7 @@ export const promptService = {
       contentType: existing.contentType,
       status: 'DRAFT',
       sortOrder: existing.sortOrder,
+      isPremium: existing.isPremium,
       videoEnabled: existing.videoEnabled,
       ...(existing.tags.length ? { tags: { create: existing.tags.map((t) => ({ tagId: t.tagId })) } } : {}),
     });
@@ -248,7 +251,7 @@ export const promptService = {
     return updated;
   },
 
-  async setFlags(id: string, flags: { isFeatured?: boolean; isTrending?: boolean }, adminId: string, ipAddress?: string) {
+  async setFlags(id: string, flags: { isFeatured?: boolean; isTrending?: boolean; isPremium?: boolean }, adminId: string, ipAddress?: string) {
     const existing = await promptRepository.findById(id);
     if (!existing) throw new NotFoundError('Prompt not found');
 
@@ -319,6 +322,7 @@ export const promptService = {
     contentType?: ContentType;
     isFeatured?: boolean;
     isTrending?: boolean;
+    isPremium?: boolean;
     search?: string;
     page: number;
     limit: number;
