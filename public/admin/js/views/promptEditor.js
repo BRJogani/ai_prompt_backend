@@ -223,10 +223,12 @@ export async function renderPromptEditor(container, router, promptId = null) {
 
     existingMedia.forEach((m, idx) => {
       const isVideo = m.mediaType === 'VIDEO';
-      const url = m.thumbnailUrl || m.secureUrl;
+      const rawUrl = m.mediaUrl || m.secureUrl || m.thumbnailUrl || '';
+      const url = rawUrl.replace(/\/c_thumb,g_auto[^\/]*\//, '/c_limit,w_1600/');
+      const mediaTitle = (prompt ? prompt.title : '') || `Attached Asset ${idx + 1}`;
       html += `
-        <div class="media-card" data-existing-id="${m.id}">
-          ${isVideo ? `<video src="${m.secureUrl}" muted autoplay loop></video>` : `<img src="${url}" alt="Preview" />`}
+        <div class="media-card" data-existing-id="${m.id}" data-url="${url}" data-title="${mediaTitle.replace(/"/g, '&quot;')}" title="Click to view full uncropped image" style="cursor: pointer;">
+          ${isVideo ? `<video src="${m.secureUrl || m.mediaUrl}" muted autoplay loop></video>` : `<img src="${url}" alt="Preview" />`}
           <span class="media-card-badge">${isVideo ? 'VIDEO' : 'IMAGE'} ${idx === 0 ? '• Primary' : ''}</span>
           <button type="button" class="media-card-delete delete-existing-media" data-id="${m.id}" title="Remove Media">
             <i data-lucide="trash" style="width: 14px; height: 14px;"></i>
@@ -237,8 +239,9 @@ export async function renderPromptEditor(container, router, promptId = null) {
 
     newFilesQueue.forEach((q, idx) => {
       const isVideo = q.type === 'VIDEO';
+      const mediaTitle = (prompt ? prompt.title : '') || `Queued Asset ${idx + 1}`;
       html += `
-        <div class="media-card" data-queue-idx="${idx}" style="border: 2px dashed var(--accent-cyan);">
+        <div class="media-card" data-queue-idx="${idx}" data-url="${q.previewUrl}" data-title="${mediaTitle.replace(/"/g, '&quot;')}" title="Click to view full uncropped image" style="border: 2px dashed var(--accent-cyan); cursor: pointer;">
           ${isVideo ? `<video src="${q.previewUrl}" muted autoplay loop></video>` : `<img src="${q.previewUrl}" alt="Queued" />`}
           <span class="media-card-badge" style="background: var(--accent-cyan); color: #000;">Pending Upload</span>
           <button type="button" class="media-card-delete delete-queued-media" data-queue-idx="${idx}" title="Cancel File">
@@ -250,6 +253,16 @@ export async function renderPromptEditor(container, router, promptId = null) {
 
     grid.innerHTML = html;
     if (window.lucide) window.lucide.createIcons();
+
+    // Click card to open full-screen lightbox
+    grid.querySelectorAll('.media-card').forEach((card) => {
+      card.addEventListener('click', (e) => {
+        if (e.target.closest('.media-card-delete')) return;
+        const url = card.getAttribute('data-url');
+        const title = card.getAttribute('data-title') || (prompt ? prompt.title : 'Prompt Image Preview');
+        if (url) modal.imageLightbox(url, title);
+      });
+    });
 
     grid.querySelectorAll('.delete-existing-media').forEach((btn) => {
       btn.addEventListener('click', async (e) => {
@@ -263,7 +276,11 @@ export async function renderPromptEditor(container, router, promptId = null) {
           onConfirm: async () => {
             try {
               if (promptId) {
-                await api.deletePromptMedia(promptId, mId);
+                if (typeof api.deletePromptMedia === 'function') {
+                  await api.deletePromptMedia(promptId, mId);
+                } else if (typeof api.deleteMedia === 'function') {
+                  await api.deleteMedia(mId);
+                }
                 toast.success('Media asset removed');
               }
               existingMedia = existingMedia.filter((m) => m.id !== mId);

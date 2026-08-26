@@ -12,6 +12,8 @@ import {
 } from '@validators/category.validator';
 import { idParamSchema, paginationQuerySchema } from '@validators/common.validator';
 
+import { uploadMedia } from '@middleware/upload';
+
 // ---------------------------------------------------------------------
 // Admin — mounted at /api/v1/admin/categories
 // ---------------------------------------------------------------------
@@ -36,6 +38,19 @@ adminCategoryRouter.post(
   authorize(...CONTENT_WRITE_ROLES),
   validate(createCategorySchema),
   categoryController.create,
+);
+adminCategoryRouter.post(
+  '/upload-image',
+  authorize(...CONTENT_WRITE_ROLES),
+  uploadMedia,
+  categoryController.uploadDirectImage,
+);
+adminCategoryRouter.post(
+  '/:id/image',
+  authorize(...CONTENT_WRITE_ROLES),
+  validate(idParamSchema(), 'params'),
+  uploadMedia,
+  categoryController.uploadImage,
 );
 adminCategoryRouter.put(
   '/:id',

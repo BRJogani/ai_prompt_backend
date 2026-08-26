@@ -27,6 +27,22 @@ export const categoryController = {
     return sendSuccess(res, null, 'Category deleted');
   }),
 
+  uploadImage: catchAsync(async (req: Request, res: Response) => {
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: 'Please select an image file to upload' });
+    }
+    const category = await categoryService.uploadImage(req.params.id, req.file, req.admin!.id, req.ip);
+    return sendSuccess(res, category, 'Category image uploaded successfully');
+  }),
+
+  uploadDirectImage: catchAsync(async (req: Request, res: Response) => {
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: 'Please select an image file to upload' });
+    }
+    const result = await categoryService.uploadDirectImage(req.file);
+    return sendSuccess(res, result, 'Image uploaded successfully');
+  }),
+
   adminGetById: catchAsync(async (req: Request, res: Response) => {
     const category = await categoryService.getById(req.params.id);
     return sendSuccess(res, category, 'Category');

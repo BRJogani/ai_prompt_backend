@@ -72,6 +72,7 @@ export const api = {
   // Auth
   login: (email, password) => apiRequest('/admin/auth/login', { method: 'POST', body: JSON.stringify({ email, password }) }),
   getMe: () => apiRequest('/admin/auth/me'),
+  registerAdmin: (data) => apiRequest('/admin/auth/register-admin', { method: 'POST', body: JSON.stringify(data) }),
 
   // Phase 9: Dashboard & Analytics
   getDashboardOverview: () => apiRequest('/admin/dashboard/overview'),
@@ -122,6 +123,23 @@ export const api = {
   createCategory: (data) => apiRequest('/admin/categories', { method: 'POST', body: JSON.stringify(data) }),
   updateCategory: (id, data) => apiRequest(`/admin/categories/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   deleteCategory: (id) => apiRequest(`/admin/categories/${id}`, { method: 'DELETE' }),
+  uploadCategoryImage: (categoryId, file) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    const token = localStorage.getItem('admin_token');
+    const endpoint = categoryId ? `/admin/categories/${categoryId}/image` : `/admin/categories/upload-image`;
+    return fetch(`${API_BASE}${endpoint}`, {
+      method: 'POST',
+      headers: {
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: formData,
+    }).then(async (r) => {
+      const data = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(data.message || 'Category image upload failed');
+      return data;
+    });
+  },
 
   // AI Tools
   getAiTools: () => apiRequest('/admin/ai-tools'),
@@ -165,6 +183,7 @@ export const api = {
       return data;
     });
   },
+  deletePromptMedia: (promptId, mediaId) => apiRequest(`/admin/media/${mediaId}`, { method: 'DELETE' }),
   deleteMedia: (mediaId) => apiRequest(`/admin/media/${mediaId}`, { method: 'DELETE' }),
   reorderMedia: (promptId, order) => apiRequest(`/admin/prompts/${promptId}/media/reorder`, { method: 'PATCH', body: JSON.stringify({ order }) }),
 

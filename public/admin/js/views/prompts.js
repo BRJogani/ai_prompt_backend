@@ -208,29 +208,42 @@ async function fetchPrompts(container, router) {
       return;
     }
 
+function getUncroppedImageUrl(m) {
+  if (!m) return 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800';
+  if (typeof m === 'string') {
+    return m.replace(/\/c_thumb,g_auto[^\/]*\//, '/c_limit,w_1600/');
+  }
+  const url = m.mediaUrl || m.secureUrl || m.thumbnailUrl || '';
+  if (url) {
+    return url.replace(/\/c_thumb,g_auto[^\/]*\//, '/c_limit,w_1600/');
+  }
+  return 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800';
+}
+
     tbody.innerHTML = state.prompts
       .map((p) => {
-        const thumbUrl = p.media && p.media.length ? p.media[0].thumbnailUrl || p.media[0].secureUrl : 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=100';
+        const thumbUrl = p.media && p.media.length ? getUncroppedImageUrl(p.media[0]) : 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800';
         const trendingScore = (p.trendingScore != null && typeof p.trendingScore === 'number') ? p.trendingScore.toFixed(1) : '0.0';
         const copyCount = p.copyCount ?? 0;
         const viewCount = p.viewCount ?? 0;
         const favoriteCount = p.favoriteCount ?? 0;
+        const safeTitle = (p.title || '').replace(/"/g, '&quot;');
 
         return `
           <tr>
             <td>
-              <img src="${thumbUrl}" class="thumbnail-preview" alt="Thumbnail" onerror="this.src='https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=100'" />
+              <img src="${thumbUrl}" class="thumbnail-preview prompt-thumbnail-click" alt="${safeTitle}" data-full-url="${thumbUrl}" data-title="${safeTitle}" title="Click to view full uncropped image" onerror="this.src='https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=100'" />
             </td>
             <td>
-              <div style="font-weight: 600; color: var(--text-main); max-width: 320px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                ${p.isPremium ? '<span style="color: #fbbf24; margin-right: 4px;" title="Premium Prompt">★</span>' : ''}${p.title}
+              <div style="font-weight: 600; color: #f8fafc; font-size: 0.95rem; line-height: 1.4; max-width: 440px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;" title="${safeTitle}">
+                ${p.isPremium ? '<span style="color: #fbbf24; margin-right: 4px;" title="Premium Prompt">★</span>' : ''}${p.title || 'Untitled Prompt'}
               </div>
-              <div style="font-size: 0.78rem; color: var(--text-muted);">${p.category ? p.category.name : 'Uncategorized'} &bull; /${p.slug}</div>
+              <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 2px;">${p.category ? p.category.name : 'Uncategorized'} &bull; /${p.slug}</div>
             </td>
             <td>
               <div style="display: flex; gap: 4px; flex-wrap: wrap;">
                 <span class="badge badge-cyan">${p.contentType || 'IMAGE'}</span>
-                ${p.isPremium ? '<span class="badge" style="background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.4);">PREMIUM</span>' : '<span class="badge" style="background: rgba(148, 163, 184, 0.15); color: #94a3b8;">FREE</span>'}
+                ${p.isPremium ? '<span class="badge" style="background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.4); font-weight: 700;">PREMIUM</span>' : ''}
               </div>
             </td>
             <td>
@@ -269,6 +282,16 @@ async function fetchPrompts(container, router) {
     // Render count label & pagination
     container.querySelector('#prompts-count-label').textContent = `Showing ${(state.page - 1) * state.limit + 1} - ${Math.min(state.page * state.limit, state.total)} of ${state.total} prompts`;
     renderPagination(container, router);
+
+    // Bind thumbnail lightbox click
+    tbody.querySelectorAll('.prompt-thumbnail-click').forEach((img) => {
+      img.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const url = img.getAttribute('data-full-url');
+        const title = img.getAttribute('data-title') || 'Prompt Preview';
+        if (url) modal.imageLightbox(url, title);
+      });
+    });
 
     // Bind row action buttons
     tbody.querySelectorAll('.edit-prompt-btn').forEach((btn) => {

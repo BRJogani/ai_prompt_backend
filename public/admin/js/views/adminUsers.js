@@ -16,18 +16,20 @@ export async function renderAdminUsers(container) {
         <h1 class="view-title">Admin Staff & Permissions</h1>
         <p class="view-subtitle">Manage administrative team members, assign role permissions, and control dashboard access</p>
       </div>
-      <div style="display: flex; gap: 10px;">
-        <button class="btn btn-secondary" id="refresh-admin-users-btn">
-          <i data-lucide="refresh-cw" style="width: 15px; height: 15px;"></i> Refresh
-        </button>
-      </div>
+      ${isSuperAdmin ? `
+        <div>
+          <button class="btn btn-primary" id="add-admin-user-btn">
+            <i data-lucide="user-plus" style="width: 16px; height: 16px;"></i> Add Admin Staff
+          </button>
+        </div>
+      ` : ''}
     </div>
 
     ${!isSuperAdmin ? `
       <div style="background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: var(--border-radius); padding: 14px 18px; margin-bottom: 20px; display: flex; align-items: center; gap: 12px;">
         <i data-lucide="shield-alert" style="color: #f59e0b; width: 22px; height: 22px; flex-shrink: 0;"></i>
         <div style="font-size: 0.875rem; color: #cbd5e1;">
-          <strong style="color: #f59e0b;">Read-Only Mode:</strong> Only users with the <code>SUPER_ADMIN</code> role have permission to modify or deactivate team accounts.
+          <strong style="color: #f59e0b;">Read-Only Mode:</strong> Only users with the <code>SUPER_ADMIN</code> role have permission to register, modify, or deactivate team accounts.
         </div>
       </div>
     ` : ''}
@@ -72,9 +74,11 @@ export async function renderAdminUsers(container) {
     });
   });
 
-  container.querySelector('#refresh-admin-users-btn')?.addEventListener('click', () => {
-    loadAdminUsersData(container, isSuperAdmin);
-  });
+  if (isSuperAdmin) {
+    container.querySelector('#add-admin-user-btn')?.addEventListener('click', () => {
+      openCreateUserModal(() => loadAdminUsersData(container, isSuperAdmin));
+    });
+  }
 
   await loadAdminUsersData(container, isSuperAdmin);
 }
@@ -88,15 +92,15 @@ async function loadAdminUsersData(container, isSuperAdmin) {
     if (currentRoleFilter) params.role = currentRoleFilter;
 
     const res = await api.getAdminUsers(params);
-    const users = res.data?.items || [];
-    const total = res.data?.total || 0;
+    const users = Array.isArray(res.data) ? res.data : (res.data?.items || []);
+    const total = res.pagination?.total ?? (res.data?.total ?? users.length);
     const totalPages = Math.ceil(total / limit) || 1;
 
     if (users.length === 0) {
       tableContainer.innerHTML = `
         <div style="text-align: center; padding: 60px 20px; color: var(--text-muted);">
           <i data-lucide="users" style="width: 44px; height: 44px; margin-bottom: 12px; color: var(--text-muted);"></i>
-          <h3 style="font-size: 1.1rem; color: var(--text-main); font-weight: 600; margin-bottom: 4px;">No Admin Users Found</h3>
+          <h3 style="font-size: 1.1rem; color: #fff; font-weight: 600; margin-bottom: 4px;">No Admin Users Found</h3>
           <p style="font-size: 0.875rem;">No accounts match the current filter.</p>
         </div>
       `;
@@ -140,7 +144,7 @@ async function loadAdminUsersData(container, isSuperAdmin) {
                     ${(u.name || 'A')[0].toUpperCase()}
                   </div>
                   <div>
-                    <div style="font-weight: 600; color: var(--text-main); font-size: 0.9rem;">${u.name}</div>
+                    <div style="font-weight: 600; color: #f1f5f9; font-size: 0.9rem;">${u.name}</div>
                     <div style="font-size: 0.78rem; color: var(--text-muted);">${u.email}</div>
                   </div>
                 </div>
@@ -152,7 +156,7 @@ async function loadAdminUsersData(container, isSuperAdmin) {
                     <span style="width: 6px; height: 6px; border-radius: 50%; background: #22c55e;"></span> Active
                   </span>
                 ` : `
-                  <span class="badge badge-error" style="display: inline-flex; align-items: center; gap: 4px;">
+                  <span class="badge badge-danger" style="display: inline-flex; align-items: center; gap: 4px;">
                     <span style="width: 6px; height: 6px; border-radius: 50%; background: #ef4444;"></span> Inactive
                   </span>
                 `}
@@ -166,8 +170,8 @@ async function loadAdminUsersData(container, isSuperAdmin) {
               <td style="text-align: right; white-space: nowrap;">
                 ${isSuperAdmin ? `
                   <div style="display: inline-flex; gap: 6px;">
-                    <button class="btn btn-secondary btn-sm edit-user-btn" data-user='${JSON.stringify(u)}' title="Edit Admin User">
-                      <i data-lucide="edit" style="width: 13px; height: 13px;"></i> Edit
+                    <button class="btn btn-secondary btn-sm edit-user-btn" data-user='${JSON.stringify(u).replace(/'/g, "&#39;")}' title="Edit Admin User">
+                      <i data-lucide="edit-3" style="width: 13px; height: 13px;"></i> Edit
                     </button>
                     <button class="btn btn-danger btn-sm delete-user-btn" data-id="${u.id}" data-name="${u.name}" title="Delete Account">
                       <i data-lucide="trash-2" style="width: 13px; height: 13px;"></i>
@@ -191,7 +195,7 @@ async function loadAdminUsersData(container, isSuperAdmin) {
           <button class="btn btn-secondary btn-sm" id="prev-user-page-btn" ${currentPage <= 1 ? 'disabled' : ''}>
             <i data-lucide="chevron-left" style="width: 14px; height: 14px;"></i> Prev
           </button>
-          <span style="display: flex; align-items: center; font-size: 0.85rem; padding: 0 8px; color: var(--text-main);">
+          <span style="display: flex; align-items: center; font-size: 0.85rem; padding: 0 8px; color: #fff;">
             ${currentPage} / ${totalPages}
           </span>
           <button class="btn btn-secondary btn-sm" id="next-user-page-btn" ${currentPage >= totalPages ? 'disabled' : ''}>
@@ -206,7 +210,9 @@ async function loadAdminUsersData(container, isSuperAdmin) {
     if (isSuperAdmin) {
       tableContainer.querySelectorAll('.edit-user-btn').forEach((btn) => {
         btn.addEventListener('click', () => {
-          const user = JSON.parse(btn.getAttribute('data-user'));
+          const userStr = btn.getAttribute('data-user');
+          if (!userStr) return;
+          const user = JSON.parse(userStr);
           openEditUserModal(user, () => loadAdminUsersData(container, isSuperAdmin));
         });
       });
@@ -223,10 +229,11 @@ async function loadAdminUsersData(container, isSuperAdmin) {
             onConfirm: async () => {
               try {
                 await api.deleteAdminUser(id);
-                toast.success(`Admin account ${name} removed`);
+                toast.success(`Admin account "${name}" removed`);
                 await loadAdminUsersData(container, isSuperAdmin);
               } catch (err) {
                 toast.error(err.message || 'Failed to delete admin user');
+                throw err;
               }
             },
           });
@@ -258,77 +265,124 @@ async function loadAdminUsersData(container, isSuperAdmin) {
   }
 }
 
+function openCreateUserModal(onSuccess) {
+  const bodyHtml = `
+    <form id="create-user-form" style="display: flex; flex-direction: column; gap: 16px;">
+      <div class="form-group">
+        <label class="form-label" for="new-user-name">Full Name *</label>
+        <input type="text" class="input-text" id="new-user-name" placeholder="e.g. Alex Morgan" required />
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="new-user-email">Email Address *</label>
+        <input type="email" class="input-text" id="new-user-email" placeholder="admin@domain.com" required />
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="new-user-password">Initial Password * (Min 8 characters)</label>
+        <input type="password" class="input-text" id="new-user-password" placeholder="••••••••" minlength="8" required />
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="new-user-role">Role & Access Tier *</label>
+        <select class="input-select" id="new-user-role" required>
+          <option value="CONTENT_ADMIN" selected>CONTENT_ADMIN (Prompts, Categories, AI Tools, Tags)</option>
+          <option value="SUPER_ADMIN">SUPER_ADMIN (Full system access & staff management)</option>
+          <option value="EDITOR">EDITOR (Create & edit prompt content only)</option>
+          <option value="ANALYTICS">ANALYTICS (View dashboards and statistics only)</option>
+        </select>
+      </div>
+    </form>
+  `;
+
+  modal.dialog({
+    title: 'Register New Admin Staff',
+    bodyHtml,
+    confirmText: 'Create Account',
+    maxWidth: '500px',
+    onConfirm: async () => {
+      const name = document.getElementById('new-user-name')?.value.trim();
+      const email = document.getElementById('new-user-email')?.value.trim();
+      const password = document.getElementById('new-user-password')?.value;
+      const role = document.getElementById('new-user-role')?.value;
+
+      if (!name || !email || !password) {
+        toast.error('All fields are required');
+        throw new Error('Validation failed');
+      }
+
+      try {
+        await api.registerAdmin({ name, email, password, role });
+        toast.success(`Admin account "${name}" created successfully`);
+        if (onSuccess) onSuccess();
+      } catch (err) {
+        toast.error(err.message || 'Failed to create admin user');
+        throw err;
+      }
+    },
+  });
+}
+
 function openEditUserModal(user, onSuccess) {
-  modal.open({
+  const bodyHtml = `
+    <form id="edit-user-form" style="display: flex; flex-direction: column; gap: 16px;">
+      <div class="form-group">
+        <label class="form-label" for="edit-user-name">Full Name *</label>
+        <input type="text" class="input-text" id="edit-user-name" value="${user.name}" required />
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Email Address</label>
+        <input type="email" class="input-text" value="${user.email}" disabled style="opacity: 0.6; cursor: not-allowed;" />
+        <span style="font-size: 0.74rem; color: var(--text-muted); margin-top: 4px; display: block;">Email addresses are permanently bound.</span>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="edit-user-role">Role & Access Permissions *</label>
+        <select class="input-select" id="edit-user-role" required>
+          <option value="SUPER_ADMIN" ${user.role === 'SUPER_ADMIN' ? 'selected' : ''}>SUPER_ADMIN (Full system access)</option>
+          <option value="CONTENT_ADMIN" ${user.role === 'CONTENT_ADMIN' ? 'selected' : ''}>CONTENT_ADMIN (Prompts, Categories, AI Tools, Tags)</option>
+          <option value="EDITOR" ${user.role === 'EDITOR' ? 'selected' : ''}>EDITOR (Create & edit prompt content only)</option>
+          <option value="ANALYTICS" ${user.role === 'ANALYTICS' ? 'selected' : ''}>ANALYTICS (View dashboards and stats only)</option>
+        </select>
+      </div>
+
+      <label class="toggle-switch" style="margin-top: 4px;">
+        <div>
+          <div style="font-size: 0.9rem; font-weight: 600; color: #fff;">Account Active</div>
+          <div style="font-size: 0.76rem; color: var(--text-secondary);">Allow this user to sign in to the admin panel</div>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="edit-user-active" ${user.isActive ? 'checked' : ''} />
+          <span class="slider"></span>
+        </label>
+      </label>
+    </form>
+  `;
+
+  modal.dialog({
     title: `Edit Admin User: ${user.name}`,
-    content: `
-      <form id="edit-user-form">
-        <div class="form-group">
-          <label class="form-label">Full Name</label>
-          <input type="text" class="form-control" name="name" value="${user.name}" required />
-        </div>
+    bodyHtml,
+    confirmText: 'Save Changes',
+    maxWidth: '500px',
+    onConfirm: async () => {
+      const name = document.getElementById('edit-user-name')?.value.trim();
+      const role = document.getElementById('edit-user-role')?.value;
+      const isActive = document.getElementById('edit-user-active')?.checked;
 
-        <div class="form-group">
-          <label class="form-label">Email Address</label>
-          <input type="email" class="form-control" value="${user.email}" disabled style="opacity: 0.6; cursor: not-allowed;" />
-          <span style="font-size: 0.75rem; color: var(--text-muted);">Email addresses cannot be altered directly.</span>
-        </div>
+      if (!name) {
+        toast.error('Name is required');
+        throw new Error('Name required');
+      }
 
-        <div class="form-group">
-          <label class="form-label">Admin Role & Permissions</label>
-          <select class="form-control" name="role" required>
-            <option value="SUPER_ADMIN" ${user.role === 'SUPER_ADMIN' ? 'selected' : ''}>SUPER_ADMIN (Full system access)</option>
-            <option value="CONTENT_ADMIN" ${user.role === 'CONTENT_ADMIN' ? 'selected' : ''}>CONTENT_ADMIN (Prompts, categories, tools, tags, home sections, app config)</option>
-            <option value="EDITOR" ${user.role === 'EDITOR' ? 'selected' : ''}>EDITOR (Create & edit prompt content only)</option>
-            <option value="ANALYTICS" ${user.role === 'ANALYTICS' ? 'selected' : ''}>ANALYTICS (View dashboards and analytics only)</option>
-          </select>
-        </div>
-
-        <div class="form-group">
-          <label class="form-label" style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
-            <input type="checkbox" name="isActive" ${user.isActive ? 'checked' : ''} style="width: 16px; height: 16px;" />
-            <span>Account Active (Allowed to sign in)</span>
-          </label>
-        </div>
-
-        <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 24px;">
-          <button type="button" class="btn btn-secondary" id="cancel-edit-btn">Cancel</button>
-          <button type="submit" class="btn btn-primary" id="save-user-btn">
-            <i data-lucide="save" style="width: 14px; height: 14px;"></i> Save Changes
-          </button>
-        </div>
-      </form>
-    `,
-    onRender: (modalEl) => {
-      if (window.lucide) window.lucide.createIcons();
-
-      modalEl.querySelector('#cancel-edit-btn')?.addEventListener('click', () => {
-        modal.close();
-      });
-
-      const form = modalEl.querySelector('#edit-user-form');
-      form?.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const submitBtn = modalEl.querySelector('#save-user-btn');
-        submitBtn.disabled = true;
-
-        const formData = new FormData(form);
-        const payload = {
-          name: formData.get('name')?.toString().trim(),
-          role: formData.get('role')?.toString(),
-          isActive: formData.get('isActive') === 'on',
-        };
-
-        try {
-          await api.updateAdminUser(user.id, payload);
-          toast.success(`Updated ${payload.name}`);
-          modal.close();
-          if (onSuccess) onSuccess();
-        } catch (err) {
-          toast.error(err.message || 'Failed to update user');
-          submitBtn.disabled = false;
-        }
-      });
+      try {
+        await api.updateAdminUser(user.id, { name, role, isActive });
+        toast.success(`Admin user "${name}" updated successfully`);
+        if (onSuccess) onSuccess();
+      } catch (err) {
+        toast.error(err.message || 'Failed to update admin user');
+        throw err;
+      }
     },
   });
 }

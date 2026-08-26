@@ -12,11 +12,6 @@ export async function renderReports(container, app) {
         <h1 class="view-title">User Reports & Moderation</h1>
         <p class="view-subtitle">Review flagged prompts, handle user complaints, and manage report resolutions</p>
       </div>
-      <div style="display: flex; gap: 10px;">
-        <button class="btn btn-secondary" id="refresh-reports-btn">
-          <i data-lucide="refresh-cw" style="width: 15px; height: 15px;"></i> Refresh
-        </button>
-      </div>
     </div>
 
     <!-- Filter Tabs -->
@@ -60,11 +55,6 @@ export async function renderReports(container, app) {
     });
   });
 
-  // Bind refresh
-  container.querySelector('#refresh-reports-btn')?.addEventListener('click', () => {
-    loadReportsData(container, app);
-  });
-
   await loadReportsData(container, app);
 }
 
@@ -77,15 +67,15 @@ async function loadReportsData(container, app) {
     if (currentStatusFilter) params.status = currentStatusFilter;
 
     const res = await api.getReports(params);
-    const reports = res.data?.items || [];
-    const total = res.data?.total || 0;
+    const reports = Array.isArray(res.data) ? res.data : (res.data?.items || []);
+    const total = res.pagination?.total ?? (res.data?.total ?? reports.length);
     const totalPages = Math.ceil(total / limit) || 1;
 
     if (reports.length === 0) {
       tableContainer.innerHTML = `
         <div style="text-align: center; padding: 60px 20px; color: var(--text-muted);">
-          <i data-lucide="shield-check" style="width: 44px; height: 44px; margin-bottom: 12px; color: var(--success);"></i>
-          <h3 style="font-size: 1.1rem; color: var(--text-main); font-weight: 600; margin-bottom: 4px;">No Reports Found</h3>
+          <i data-lucide="shield-check" style="width: 44px; height: 44px; margin-bottom: 12px; color: var(--accent-emerald);"></i>
+          <h3 style="font-size: 1.1rem; color: #fff; font-weight: 600; margin-bottom: 4px;">No Reports Found</h3>
           <p style="font-size: 0.875rem;">${currentStatusFilter ? `No ${currentStatusFilter.toLowerCase()} reports right now.` : 'No content reports have been submitted.'}</p>
         </div>
       `;
@@ -131,7 +121,7 @@ async function loadReportsData(container, app) {
               <td>${getStatusBadge(report.status)}</td>
               <td>${getReasonLabel(report.reason)}</td>
               <td style="max-width: 280px;">
-                <div style="font-size: 0.875rem; color: var(--text-main); font-weight: 500; margin-bottom: 2px;">
+                <div style="font-size: 0.875rem; color: #f1f5f9; font-weight: 500; margin-bottom: 2px;">
                   ${report.description ? report.description : '<span style="color: var(--text-muted); font-style: italic;">No extra details provided</span>'}
                 </div>
                 <div style="font-size: 0.75rem; color: var(--text-muted);">

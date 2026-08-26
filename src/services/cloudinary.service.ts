@@ -53,7 +53,7 @@ export const cloudinaryService = {
         secureUrl: result.secure_url,
         thumbnailUrl: cloudinary.url(result.public_id, {
           secure: true,
-          transformation: [{ width: 400, height: 400, crop: 'thumb', gravity: 'auto' }],
+          transformation: [{ width: 800, crop: 'limit', quality: 'auto', fetch_format: 'auto' }],
         }),
         width: result.width,
         height: result.height,
@@ -77,7 +77,7 @@ export const cloudinaryService = {
           resource_type: 'video',
           secure: true,
           format: 'jpg',
-          transformation: [{ width: 400, height: 400, crop: 'thumb', gravity: 'auto' }, { start_offset: '0' }],
+          transformation: [{ width: 800, crop: 'limit', quality: 'auto' }, { start_offset: '0' }],
         }),
         width: result.width,
         height: result.height,

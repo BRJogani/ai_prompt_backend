@@ -9,9 +9,9 @@ export const createCategorySchema = z.object({
     .max(140)
     .regex(/^[a-z0-9-]+$/, 'Slug must be lowercase letters, numbers, and hyphens only')
     .optional(),
-  description: z.string().max(1000).optional(),
-  iconUrl: z.string().url().optional(),
-  coverImageUrl: z.string().url().optional(),
+  description: z.string().max(1000).optional().nullable(),
+  iconUrl: z.string().url().optional().or(z.literal('')).nullable(),
+  coverImageUrl: z.string().url().optional().or(z.literal('')).nullable(),
   sortOrder: z.number().int().min(0).optional(),
   isFeatured: z.boolean().optional(),
   videoEnabled: z.boolean().optional(),

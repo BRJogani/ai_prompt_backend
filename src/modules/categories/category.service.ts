@@ -5,6 +5,7 @@ import { ConflictError, NotFoundError, ValidationError } from '@utils/ApiError';
 import { recordAuditLog } from '@services/audit.service';
 import { AUDIT_ACTIONS } from '@constants/adminActions';
 import { findPublicPromptsWithVideoGate } from '@modules/prompts/prompt-visibility.service';
+import { cloudinaryService } from '@services/cloudinary.service';
 
 interface CategoryInput {
   name: string;
@@ -138,6 +139,44 @@ export const categoryService = {
 
   async listPublic() {
     return categoryRepository.listAllActive();
+  },
+
+  /**
+   * Upload an image for an existing category and update its coverImageUrl & iconUrl
+   */
+  async uploadImage(categoryId: string, file: Express.Multer.File, adminId: string, ipAddress?: string) {
+    const category = await categoryRepository.findById(categoryId);
+    if (!category) throw new NotFoundError('Category not found');
+    if (!file) throw new ValidationError('No image file provided');
+
+    const uploadResult = await cloudinaryService.uploadImage(file.buffer, 'categories', categoryId);
+    const updated = await categoryRepository.update(categoryId, {
+      coverImageUrl: uploadResult.secureUrl,
+      iconUrl: uploadResult.thumbnailUrl,
+    });
+
+    await recordAuditLog({
+      adminId,
+      action: AUDIT_ACTIONS.UPDATE_CATEGORY,
+      entityType: 'Category',
+      entityId: categoryId,
+      metadata: { action: 'upload_image', coverImageUrl: uploadResult.secureUrl },
+      ipAddress,
+    });
+
+    return updated;
+  },
+
+  /**
+   * Upload an image to Cloudinary categories folder directly (for new category drafting)
+   */
+  async uploadDirectImage(file: Express.Multer.File) {
+    if (!file) throw new ValidationError('No image file provided');
+    const uploadResult = await cloudinaryService.uploadImage(file.buffer, 'categories');
+    return {
+      secureUrl: uploadResult.secureUrl,
+      thumbnailUrl: uploadResult.thumbnailUrl,
+    };
   },
 
   /**

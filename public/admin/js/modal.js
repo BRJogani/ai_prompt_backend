@@ -171,6 +171,63 @@ export const modal = {
 
     return { backdrop, close };
   },
+
+  // Full-Screen Image Lightbox Preview (Supports optional 1:1 square ratio display)
+  imageLightbox(imageUrl, title = 'Image Preview', options = {}) {
+    document.querySelectorAll('.lightbox-backdrop').forEach((el) => el.remove());
+
+    const isSquare = options.isSquare || options.aspectRatio === '1/1' || options.aspectRatio === 1;
+    const imgClass = isSquare ? 'lightbox-img-1x1' : 'lightbox-img';
+    const badgeHtml = isSquare
+      ? '<span class="badge" style="background: rgba(6, 182, 212, 0.2); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.4); font-size: 0.72rem; font-weight: 700; margin-left: 8px;">1:1 Ratio</span>'
+      : '';
+
+    const backdrop = document.createElement('div');
+    backdrop.className = 'lightbox-backdrop';
+
+    backdrop.innerHTML = `
+      <div class="lightbox-wrapper">
+        <div class="lightbox-header">
+          <div style="display: flex; align-items: center; gap: 6px; max-width: 80%;">
+            <span class="lightbox-title">${title}</span>
+            ${badgeHtml}
+          </div>
+          <button type="button" class="btn-icon lightbox-close-btn" aria-label="Close">
+            <i data-lucide="x" style="width: 20px; height: 20px;"></i>
+          </button>
+        </div>
+        <div class="lightbox-body">
+          <img src="${imageUrl}" alt="Full preview" class="${imgClass}" />
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(backdrop);
+    if (window.lucide) window.lucide.createIcons();
+
+    requestAnimationFrame(() => backdrop.classList.add('open'));
+
+    const close = () => {
+      backdrop.classList.remove('open');
+      setTimeout(() => backdrop.remove(), 200);
+    };
+
+    backdrop.querySelector('.lightbox-close-btn')?.addEventListener('click', close);
+    backdrop.addEventListener('click', (e) => {
+      if (e.target === backdrop || e.target.classList.contains('lightbox-body') || e.target.classList.contains('lightbox-wrapper')) {
+        close();
+      }
+    });
+
+    const onKeydown = (e) => {
+      if (e.key === 'Escape') {
+        window.removeEventListener('keydown', onKeydown);
+        close();
+      }
+    };
+    window.addEventListener('keydown', onKeydown);
+  },
 };
+
 
 
