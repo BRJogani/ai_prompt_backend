@@ -39,6 +39,15 @@ jest.mock('@config/database', () => ({
         events.push(event);
         return Promise.resolve(event);
       }),
+      findFirst: jest.fn(({ where }: any) => {
+        const match = events.find(
+          (e) =>
+            (!where.userId || e.userId === where.userId) &&
+            (!where.promptId || e.promptId === where.promptId) &&
+            (!where.eventType || e.eventType === where.eventType),
+        );
+        return Promise.resolve(match ? { id: match.id } : null);
+      }),
     },
   },
   connectDatabase: jest.fn().mockResolvedValue(undefined),
@@ -94,6 +103,17 @@ describe('POST /api/v1/analytics/events', () => {
 
     expect(res.status).toBe(201);
     expect(prompts.get('prompt_1').viewCount).toBe(before + 1);
+  });
+
+  it('does NOT increment viewCount on repeat PROMPT_VIEW from the same device', async () => {
+    const current = prompts.get('prompt_1').viewCount;
+    const res = await request(app)
+      .post('/api/v1/analytics/events')
+      .set('X-Device-ID', deviceId)
+      .send({ eventType: 'PROMPT_VIEW', promptId: 'prompt_1' });
+
+    expect(res.status).toBe(201);
+    expect(prompts.get('prompt_1').viewCount).toBe(current);
   });
 
   it('increments copyCount on PROMPT_COPY and shareCount on PROMPT_SHARE', async () => {

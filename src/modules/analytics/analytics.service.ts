@@ -32,6 +32,12 @@ export const analyticsService = {
       if (!exists) throw new NotFoundError('promptId does not reference an existing prompt');
     }
 
+    let isFirstView = false;
+    if (params.promptId && VIEW_EVENTS.has(params.eventType)) {
+      const alreadyViewed = await analyticsRepository.hasUserViewedPrompt(params.userId, params.promptId);
+      isFirstView = !alreadyViewed;
+    }
+
     const event = await analyticsRepository.createEvent({
       userId: params.userId,
       eventType: params.eventType,
@@ -44,7 +50,7 @@ export const analyticsService = {
     });
 
     if (params.promptId) {
-      if (VIEW_EVENTS.has(params.eventType)) {
+      if (VIEW_EVENTS.has(params.eventType) && isFirstView) {
         await promptRepository.incrementViewCount(params.promptId);
       } else if (COPY_EVENTS.has(params.eventType)) {
         await promptRepository.incrementCopyCount(params.promptId);
