@@ -24,6 +24,23 @@ adminPromptRouter.get(
   validate(promptListQuerySchema, 'query'),
   promptController.list,
 );
+
+adminPromptRouter.get(
+  '/top-pinned',
+  authorize(...CONTENT_WRITE_ROLES),
+  promptController.getTopPinned,
+);
+adminPromptRouter.post(
+  '/top-pinned/toggle',
+  authorize(...CONTENT_MANAGE_ROLES),
+  promptController.toggleTopPinned,
+);
+adminPromptRouter.put(
+  '/top-pinned/reorder',
+  authorize(...CONTENT_MANAGE_ROLES),
+  promptController.reorderTopPinned,
+);
+
 adminPromptRouter.get(
   '/:id',
   authorize(...CONTENT_WRITE_ROLES),

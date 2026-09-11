@@ -1,5 +1,7 @@
 import { prisma } from '@config/database';
 import { ContentType, Prisma, PromptStatus } from '@prisma/client';
+import { getDailyOrderedPromptIds, clearDailyShuffleCache } from './daily-shuffle.service';
+import { appSettingService } from '@modules/app-config/app-setting.service';
 
 /** Standard include shape for admin-facing prompt reads. */
 const adminInclude = {
@@ -9,7 +11,7 @@ const adminInclude = {
   tags: { include: { tag: true } },
 };
 
-export type PromptSortOption = 'latest' | 'trending' | 'popular' | 'most_viewed' | 'most_favorited' | 'most_copied';
+export type PromptSortOption = 'latest' | 'trending' | 'popular' | 'most_viewed' | 'most_favorited' | 'most_copied' | 'daily_shuffle';
 
 /**
  * Maps each public sort option (Section 31) to a Prisma orderBy clause.
@@ -35,14 +37,17 @@ function resolveOrderBy(sort: PromptSortOption): Prisma.PromptOrderByWithRelatio
 
 export const promptRepository = {
   create(data: Prisma.PromptCreateInput) {
+    clearDailyShuffleCache();
     return prisma.prompt.create({ data, include: adminInclude });
   },
 
   update(id: string, data: Prisma.PromptUpdateInput) {
+    clearDailyShuffleCache();
     return prisma.prompt.update({ where: { id }, data, include: adminInclude });
   },
 
   delete(id: string) {
+    clearDailyShuffleCache();
     return prisma.prompt.delete({ where: { id } });
   },
 
@@ -174,6 +179,35 @@ export const promptRepository = {
     };
 
     const where: Prisma.PromptWhereInput = params.extraWhere ? { AND: [baseWhere, params.extraWhere] } : baseWhere;
+
+    // Check if daily synchronized shuffle should be applied
+    const isExplicitShuffle = params.sort === 'daily_shuffle';
+    let shouldUseDailyShuffle = isExplicitShuffle;
+    if (!shouldUseDailyShuffle && (!params.sort || params.sort === 'latest') && !params.search) {
+      shouldUseDailyShuffle = await appSettingService.getBoolean('daily_shuffle_enabled', true);
+    }
+
+    if (shouldUseDailyShuffle) {
+      const allOrderedIds = await getDailyOrderedPromptIds(where);
+      const total = allOrderedIds.length;
+      const skip = (params.page - 1) * params.limit;
+      const pageIds = allOrderedIds.slice(skip, skip + params.limit);
+
+      if (pageIds.length === 0) {
+        return { items: [], total };
+      }
+
+      const rawItems = await prisma.prompt.findMany({
+        where: { id: { in: pageIds } },
+        include: adminInclude,
+      });
+
+      // Re-order raw items to strictly match the daily deterministic pageIds order
+      const itemMap = new Map(rawItems.map((item) => [item.id, item]));
+      const items = pageIds.map((id) => itemMap.get(id)).filter(Boolean) as typeof rawItems;
+
+      return { items, total };
+    }
 
     const [items, total] = await Promise.all([
       prisma.prompt.findMany({

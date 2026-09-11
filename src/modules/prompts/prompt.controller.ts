@@ -3,6 +3,7 @@ import { catchAsync } from '@utils/catchAsync';
 import { sendSuccess, buildPaginationMeta } from '@utils/ApiResponse';
 import { promptService } from './prompt.service';
 import { PromptListQuery } from '@validators/prompt.validator';
+import { appSettingService } from '@modules/app-config/app-setting.service';
 
 export const promptController = {
   create: catchAsync(async (req: Request, res: Response) => {
@@ -58,6 +59,42 @@ export const promptController = {
   getById: catchAsync(async (req: Request, res: Response) => {
     const prompt = await promptService.getById(req.params.id);
     return sendSuccess(res, prompt, 'Prompt');
+  }),
+
+  getTopPinned: catchAsync(async (_req: Request, res: Response) => {
+    const topPinnedIds = await appSettingService.getTopPinnedPromptIds();
+    let items: any[] = [];
+    if (topPinnedIds.length) {
+      const { prisma } = await import('@config/database');
+      const found = await prisma.prompt.findMany({
+        where: { id: { in: topPinnedIds } },
+        include: {
+          category: { select: { id: true, name: true, slug: true } },
+          media: { orderBy: { sortOrder: 'asc' }, take: 1 },
+        },
+      });
+      const map = new Map(found.map((p) => [p.id, p]));
+      items = topPinnedIds.map((id: string) => map.get(id)).filter(Boolean);
+    }
+    return sendSuccess(res, { items, pinnedIds: topPinnedIds }, 'Top pinned prompts');
+  }),
+
+  toggleTopPinned: catchAsync(async (req: Request, res: Response) => {
+    const promptId = req.body.promptId;
+    if (!promptId || typeof promptId !== 'string') {
+      return res.status(400).json({ success: false, message: 'promptId is required' });
+    }
+    const result = await appSettingService.toggleTopPinnedPrompt(promptId, req.admin!.id, req.ip);
+    return sendSuccess(res, result, result.pinned ? 'Prompt pinned to top section' : 'Prompt unpinned from top section');
+  }),
+
+  reorderTopPinned: catchAsync(async (req: Request, res: Response) => {
+    const pinnedIds = req.body.pinnedIds;
+    if (!Array.isArray(pinnedIds)) {
+      return res.status(400).json({ success: false, message: 'pinnedIds must be an array' });
+    }
+    const result = await appSettingService.setTopPinnedPromptIds(pinnedIds, req.admin!.id, req.ip);
+    return sendSuccess(res, { pinnedIds: result }, 'Top pinned prompts reordered');
   }),
 
   list: catchAsync(async (req: Request, res: Response) => {

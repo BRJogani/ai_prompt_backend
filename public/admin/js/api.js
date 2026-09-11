@@ -117,6 +117,9 @@ export const api = {
   createPrompt: (data) => apiRequest('/admin/prompts', { method: 'POST', body: JSON.stringify(data) }),
   updatePrompt: (id, data) => apiRequest(`/admin/prompts/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   deletePrompt: (id) => apiRequest(`/admin/prompts/${id}`, { method: 'DELETE' }),
+  getTopPinnedPrompts: () => apiRequest('/admin/prompts/top-pinned'),
+  toggleTopPinnedPrompt: (promptId) => apiRequest('/admin/prompts/top-pinned/toggle', { method: 'POST', body: JSON.stringify({ promptId }) }),
+  reorderTopPinnedPrompts: (pinnedIds) => apiRequest('/admin/prompts/top-pinned/reorder', { method: 'PUT', body: JSON.stringify({ pinnedIds }) }),
 
   // Categories
   getCategories: () => apiRequest('/admin/categories'),

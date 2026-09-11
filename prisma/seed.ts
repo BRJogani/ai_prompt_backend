@@ -292,6 +292,8 @@ async function seedPrompts(
 // ---------------------------------------------------------------------------
 const APP_SETTING_SEED: Array<{ key: string; value: string; valueType: string; description: string }> = [
   { key: 'app_name', value: 'AI Prompt Inspiration', valueType: 'string', description: 'Display name shown in the app.' },
+  { key: 'daily_shuffle_enabled', value: 'true', valueType: 'boolean', description: 'Feature flag: Daily randomized synchronized prompt shuffling across all devices.' },
+  { key: 'daily_shuffle_salt', value: '', valueType: 'string', description: 'Dynamic salt seed for daily synchronized prompt shuffling.' },
   { key: 'video_enabled', value: 'true', valueType: 'boolean', description: 'Global video visibility kill switch (Section 16).' },
   { key: 'search_enabled', value: 'true', valueType: 'boolean', description: 'Feature flag: search.' },
   { key: 'history_enabled', value: 'true', valueType: 'boolean', description: 'Feature flag: view history.' },

@@ -4,6 +4,8 @@ import { toast } from '../toast.js';
 
 let state = {
   prompts: [],
+  pinnedPrompts: [],
+  pinnedIds: [],
   categories: [],
   tags: [],
   page: 1,
@@ -13,7 +15,20 @@ let state = {
   categoryId: '',
   status: '',
   isPremium: '',
+  isFeatured: '',
 };
+
+function getUncroppedImageUrl(m) {
+  if (!m) return 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800';
+  if (typeof m === 'string') {
+    return m.replace(/\/c_thumb,g_auto[^\/]*\//, '/c_limit,w_1600/');
+  }
+  const url = m.mediaUrl || m.secureUrl || m.thumbnailUrl || '';
+  if (url) {
+    return url.replace(/\/c_thumb,g_auto[^\/]*\//, '/c_limit,w_1600/');
+  }
+  return 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800';
+}
 
 export async function renderPrompts(container, router, options = {}) {
   if (options && options.refresh) {
@@ -22,6 +37,7 @@ export async function renderPrompts(container, router, options = {}) {
     state.categoryId = '';
     state.status = '';
     state.isPremium = '';
+    state.isFeatured = '';
   }
 
   container.innerHTML = `
@@ -39,6 +55,27 @@ export async function renderPrompts(container, router, options = {}) {
           <button class="btn btn-primary" id="btn-create-prompt">
             <i data-lucide="plus" style="width: 16px; height: 16px;"></i> + Create New Prompt
           </button>
+        </div>
+      </div>
+
+      <!-- Top Selected Images Section (Show First, Then Shuffled) -->
+      <div class="card" style="border: 1px solid rgba(245, 158, 11, 0.4); background: linear-gradient(135deg, rgba(30, 27, 75, 0.5) 0%, rgba(20, 15, 35, 0.7) 100%);">
+        <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+          <div>
+            <div class="card-title" style="color: #fbbf24; display: flex; align-items: center; gap: 8px;">
+              <i data-lucide="pin" style="color: #fbbf24; width: 20px; height: 20px;"></i>
+              Top Selected Images Section (Show on Top, Then Shuffled)
+            </div>
+            <p style="font-size: 0.82rem; color: #cbd5e1; margin: 4px 0 0 0;">
+              Selected prompt images will <strong>always display first at the top of the feed</strong> in this exact sequence (#1, #2, #3...), followed by the synchronized shuffled prompts.
+            </p>
+          </div>
+          <button class="btn btn-primary btn-sm" id="btn-open-pin-picker" style="background: linear-gradient(135deg, #f59e0b, #d97706); border: none; font-weight: 600;">
+            <i data-lucide="plus-circle" style="width: 15px; height: 15px;"></i> + Select Image to Pin at Top
+          </button>
+        </div>
+        <div class="card-body" id="top-pinned-cards-container" style="padding: 16px; overflow-x: auto;">
+          <div style="text-align: center; padding: 20px; color: var(--text-muted);">Loading pinned showcase...</div>
         </div>
       </div>
 
@@ -68,7 +105,13 @@ export async function renderPrompts(container, router, options = {}) {
             <option value="true" ${state.isPremium === 'true' ? 'selected' : ''}>⭐ Premium</option>
           </select>
 
-          ${state.search || state.categoryId || state.status || state.isPremium ? `
+          <select id="filter-priority" class="input-select" style="width: auto; min-width: 135px;">
+            <option value="" ${state.isFeatured === '' ? 'selected' : ''}>All Priority</option>
+            <option value="true" ${state.isFeatured === 'true' ? 'selected' : ''}>⭐ Priority First</option>
+            <option value="false" ${state.isFeatured === 'false' ? 'selected' : ''}>Standard Only</option>
+          </select>
+
+          ${state.search || state.categoryId || state.status || state.isPremium || state.isFeatured ? `
             <button class="btn btn-secondary btn-sm" id="btn-clear-filters">
               <i data-lucide="x" style="width: 14px; height: 14px;"></i> Clear
             </button>
@@ -88,7 +131,7 @@ export async function renderPrompts(container, router, options = {}) {
                 <th>Status</th>
                 <th>Copy & Interaction Counters</th>
                 <th>Trending</th>
-                <th style="text-align: right; width: 120px;">Actions</th>
+                <th style="text-align: right; width: 170px;">Actions</th>
               </tr>
             </thead>
             <tbody id="prompts-table-body">
@@ -111,12 +154,20 @@ export async function renderPrompts(container, router, options = {}) {
   // Load auxiliary data (categories, tags)
   await loadAuxData(container);
 
+  // Load top pinned showcase
+  await fetchTopPinnedPrompts(container, router);
+
   // Load prompts list
   await fetchPrompts(container, router);
 
   // Bind refresh
-  container.querySelector('#btn-refresh-prompts')?.addEventListener('click', () => {
-    fetchPrompts(container, router);
+  container.querySelector('#btn-refresh-prompts')?.addEventListener('click', async () => {
+    await Promise.all([fetchTopPinnedPrompts(container, router), fetchPrompts(container, router)]);
+  });
+
+  // Bind open pin picker button
+  container.querySelector('#btn-open-pin-picker')?.addEventListener('click', () => {
+    openSelectImageToPinModal(container, router);
   });
 
   // Bind clear filters
@@ -125,6 +176,7 @@ export async function renderPrompts(container, router, options = {}) {
     state.categoryId = '';
     state.status = '';
     state.isPremium = '';
+    state.isFeatured = '';
     state.page = 1;
     renderPrompts(container, router);
   });
@@ -159,6 +211,12 @@ export async function renderPrompts(container, router, options = {}) {
     fetchPrompts(container, router);
   });
 
+  container.querySelector('#filter-priority')?.addEventListener('change', (e) => {
+    state.isFeatured = e.target.value;
+    state.page = 1;
+    fetchPrompts(container, router);
+  });
+
   container.querySelector('#btn-create-prompt')?.addEventListener('click', () => {
     router.navigate('prompt-editor');
   });
@@ -179,7 +237,241 @@ async function loadAuxData(container) {
       catSelect.innerHTML = `<option value="">All Categories</option>` + state.categories.map((c) => `<option value="${c.id}" ${state.categoryId === c.id ? 'selected' : ''}>${c.name}</option>`).join('');
     }
   } catch (err) {
-    console.error('Failed to load aux data', err);
+    console.error('Failed to load auxiliary filter data', err);
+  }
+}
+
+async function fetchTopPinnedPrompts(container, router) {
+  const cardsContainer = container.querySelector('#top-pinned-cards-container');
+  if (!cardsContainer) return;
+
+  try {
+    const res = await api.getTopPinnedPrompts();
+    state.pinnedPrompts = res.data?.items || [];
+    state.pinnedIds = res.data?.pinnedIds || [];
+
+    if (!state.pinnedPrompts.length) {
+      cardsContainer.innerHTML = `
+        <div style="text-align: center; padding: 24px 16px; background: rgba(0,0,0,0.25); border-radius: var(--radius-md); border: 1px dashed rgba(245, 158, 11, 0.35);">
+          <i data-lucide="image" style="width: 32px; height: 32px; color: #f59e0b; margin-bottom: 6px;"></i>
+          <div style="font-size: 0.92rem; font-weight: 700; color: #f8fafc;">No Prompt Images Pinned to Top Yet</div>
+          <p style="font-size: 0.8rem; color: #94a3b8; max-width: 540px; margin: 4px auto 14px auto;">
+            Prompts selected here will show up at the very top of the feed before shuffled items. Click below or click <strong>📌 Pin</strong> on any prompt in the catalog.
+          </p>
+          <button class="btn btn-primary btn-sm" id="btn-empty-pin-picker" style="background: linear-gradient(135deg, #f59e0b, #d97706); border: none; font-weight: 600;">
+            <i data-lucide="plus-circle" style="width: 14px; height: 14px;"></i> Select Prompt Image to Pin
+          </button>
+        </div>
+      `;
+      if (window.lucide) window.lucide.createIcons();
+      cardsContainer.querySelector('#btn-empty-pin-picker')?.addEventListener('click', () => openSelectImageToPinModal(container, router));
+      return;
+    }
+
+    cardsContainer.innerHTML = `
+      <div style="display: flex; gap: 14px; align-items: stretch; overflow-x: auto; padding-bottom: 6px;">
+        ${state.pinnedPrompts.map((p, idx) => {
+          const thumbUrl = p.media && p.media.length ? getUncroppedImageUrl(p.media[0]) : 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800';
+          const safeTitle = (p.title || '').replace(/"/g, '&quot;');
+          return `
+            <div class="top-pinned-card" style="width: 190px; min-width: 190px; background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(245, 158, 11, 0.4); border-radius: 10px; overflow: hidden; display: flex; flex-direction: column; flex-shrink: 0; box-shadow: 0 4px 14px rgba(0,0,0,0.35);">
+              <div style="position: relative; width: 100%; height: 130px; overflow: hidden; background: #000;">
+                <img src="${thumbUrl}" class="prompt-thumbnail-click" alt="${safeTitle}" data-full-url="${thumbUrl}" data-title="${safeTitle}" style="width: 100%; height: 100%; object-fit: cover; cursor: pointer; transition: transform 0.2s;" onerror="this.src='https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=200'" />
+                <span class="badge" style="position: absolute; top: 6px; left: 6px; background: #f59e0b; color: #000; font-weight: 800; font-size: 0.72rem; box-shadow: 0 2px 6px rgba(0,0,0,0.5);">
+                  ⭐ Top #${idx + 1}
+                </span>
+                <button class="btn-icon unpin-card-btn" data-id="${p.id}" title="Remove from Top Section" style="position: absolute; top: 6px; right: 6px; width: 26px; height: 26px; background: rgba(0,0,0,0.75); color: #f87171; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; border: none;">
+                  <i data-lucide="x" style="width: 14px; height: 14px;"></i>
+                </button>
+              </div>
+              <div style="padding: 10px; display: flex; flex-direction: column; gap: 8px; flex: 1; justify-content: space-between;">
+                <div>
+                  <div style="font-size: 0.83rem; font-weight: 600; color: #f8fafc; line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;" title="${safeTitle}">
+                    ${p.title || 'Untitled Prompt'}
+                  </div>
+                  <div style="font-size: 0.72rem; color: #94a3b8; margin-top: 3px;">
+                    ${p.category ? p.category.name : 'Uncategorized'}
+                  </div>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 8px; margin-top: 4px;">
+                  <button class="btn btn-secondary btn-sm reorder-pin-btn" data-id="${p.id}" data-dir="left" ${idx === 0 ? 'disabled' : ''} style="padding: 2px 8px; font-size: 0.75rem;" title="Move earlier in feed">
+                    ◀
+                  </button>
+                  <span style="font-size: 0.72rem; font-weight: 700; color: #fbbf24;">Pos #${idx + 1}</span>
+                  <button class="btn btn-secondary btn-sm reorder-pin-btn" data-id="${p.id}" data-dir="right" ${idx === state.pinnedPrompts.length - 1 ? 'disabled' : ''} style="padding: 2px 8px; font-size: 0.75rem;" title="Move later in feed">
+                    ▶
+                  </button>
+                </div>
+              </div>
+            </div>
+          `;
+        }).join('')}
+      </div>
+    `;
+
+    if (window.lucide) window.lucide.createIcons();
+
+    // Wire unpin buttons
+    cardsContainer.querySelectorAll('.unpin-card-btn').forEach((btn) => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const id = btn.getAttribute('data-id');
+        try {
+          await api.toggleTopPinnedPrompt(id);
+          toast.success('Prompt unpinned from top section');
+          await Promise.all([fetchTopPinnedPrompts(container, router), fetchPrompts(container, router)]);
+        } catch (err) {
+          toast.error(err.message || 'Failed to unpin prompt');
+        }
+      });
+    });
+
+    // Wire reorder buttons
+    cardsContainer.querySelectorAll('.reorder-pin-btn').forEach((btn) => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const id = btn.getAttribute('data-id');
+        const dir = btn.getAttribute('data-dir');
+        const currIdx = state.pinnedIds.indexOf(id);
+        if (currIdx === -1) return;
+
+        const newIds = [...state.pinnedIds];
+        const targetIdx = dir === 'left' ? currIdx - 1 : currIdx + 1;
+        if (targetIdx < 0 || targetIdx >= newIds.length) return;
+
+        const temp = newIds[currIdx];
+        newIds[currIdx] = newIds[targetIdx];
+        newIds[targetIdx] = temp;
+
+        try {
+          await api.reorderTopPinnedPrompts(newIds);
+          await Promise.all([fetchTopPinnedPrompts(container, router), fetchPrompts(container, router)]);
+        } catch (err) {
+          toast.error(err.message || 'Failed to reorder prompts');
+        }
+      });
+    });
+
+    // Wire thumbnail lightbox
+    cardsContainer.querySelectorAll('.prompt-thumbnail-click').forEach((img) => {
+      img.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const url = img.getAttribute('data-full-url');
+        const title = img.getAttribute('data-title') || 'Prompt Preview';
+        if (url) modal.imageLightbox(url, title);
+      });
+    });
+  } catch (err) {
+    cardsContainer.innerHTML = `<div style="color: #f87171; font-size: 0.82rem; padding: 10px;">Failed to load top pinned showcase</div>`;
+  }
+}
+
+async function openSelectImageToPinModal(container, router) {
+  document.querySelectorAll('.modal-backdrop').forEach((el) => el.remove());
+
+  const backdrop = document.createElement('div');
+  backdrop.className = 'modal-backdrop';
+  backdrop.innerHTML = `
+    <div class="modal-dialog" style="max-width: 780px; width: 92vw;">
+      <div class="modal-header">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <i data-lucide="pin" style="color: #f59e0b; width: 18px; height: 18px;"></i>
+          <h3 class="modal-title">Select Prompt Image to Show on Top</h3>
+        </div>
+        <button type="button" class="btn-icon modal-close-btn" id="picker-close-btn" aria-label="Close dialog">
+          <i data-lucide="x" style="width: 18px; height: 18px;"></i>
+        </button>
+      </div>
+      <div class="modal-body" style="display: flex; flex-direction: column; gap: 16px; max-height: 65vh; overflow-y: auto;">
+        <p style="font-size: 0.85rem; color: #94a3b8; margin: 0;">
+          Click on any prompt image below to add or remove it from the <strong>Top Selected Images Section</strong>. Selected images appear first on all mobile devices, followed by the shuffled prompts.
+        </p>
+        <div id="picker-grid-container" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px;">
+          <div style="text-align: center; padding: 30px; color: var(--text-muted); grid-column: 1 / -1;">Loading prompt library...</div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary" id="picker-done-btn">Done</button>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(backdrop);
+  if (window.lucide) window.lucide.createIcons();
+  requestAnimationFrame(() => backdrop.classList.add('open'));
+
+  const close = () => {
+    backdrop.classList.remove('open');
+    setTimeout(() => backdrop.remove(), 200);
+  };
+
+  backdrop.querySelector('#picker-close-btn')?.addEventListener('click', close);
+  backdrop.querySelector('#picker-done-btn')?.addEventListener('click', close);
+  backdrop.addEventListener('click', (e) => {
+    if (e.target === backdrop) close();
+  });
+
+  try {
+    const res = await api.getPrompts({ page: 1, limit: 60, status: 'PUBLISHED' });
+    const prompts = res.data || [];
+    const grid = backdrop.querySelector('#picker-grid-container');
+    if (!grid) return;
+
+    if (!prompts.length) {
+      grid.innerHTML = `<div style="text-align: center; padding: 30px; color: var(--text-muted); grid-column: 1 / -1;">No published prompts available to pin.</div>`;
+      return;
+    }
+
+    const renderPickerItems = () => {
+      grid.innerHTML = prompts.map((p) => {
+        const thumbUrl = p.media && p.media.length ? getUncroppedImageUrl(p.media[0]) : 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=400';
+        const isPinned = state.pinnedIds.includes(p.id);
+        const pinRank = isPinned ? state.pinnedIds.indexOf(p.id) + 1 : 0;
+        const safeTitle = (p.title || '').replace(/"/g, '&quot;');
+
+        return `
+          <div class="picker-item-card" data-id="${p.id}" style="position: relative; border-radius: 8px; overflow: hidden; border: 2px solid ${isPinned ? '#f59e0b' : 'rgba(255,255,255,0.08)'}; cursor: pointer; transition: all 0.2s ease; background: #0f172a; display: flex; flex-direction: column;">
+            <div style="position: relative; width: 100%; height: 115px; overflow: hidden;">
+              <img src="${thumbUrl}" alt="${safeTitle}" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.src='https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=200'" />
+              ${isPinned ? `
+                <div style="position: absolute; top: 6px; left: 6px; background: #f59e0b; color: #000; font-size: 0.7rem; font-weight: 800; padding: 2px 7px; border-radius: 4px; box-shadow: 0 2px 6px rgba(0,0,0,0.5);">
+                  ⭐ Top #${pinRank}
+                </div>
+              ` : ''}
+            </div>
+            <div style="padding: 8px; display: flex; flex-direction: column; gap: 6px; flex: 1; justify-content: space-between;">
+              <div style="font-size: 0.78rem; font-weight: 600; color: #f8fafc; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+                ${p.title || 'Untitled'}
+              </div>
+              <button class="btn ${isPinned ? 'btn-danger' : 'btn-secondary'} btn-sm" style="width: 100%; font-size: 0.72rem; padding: 3px 6px;">
+                ${isPinned ? '✕ Unpin' : '+ Pin to Top'}
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      grid.querySelectorAll('.picker-item-card').forEach((card) => {
+        card.addEventListener('click', async (e) => {
+          e.stopPropagation();
+          const id = card.getAttribute('data-id');
+          try {
+            const toggleRes = await api.toggleTopPinnedPrompt(id);
+            state.pinnedIds = toggleRes.data?.pinnedIds || [];
+            toast.success(toggleRes.message || 'Updated top pinned prompt');
+            renderPickerItems();
+            await Promise.all([fetchTopPinnedPrompts(container, router), fetchPrompts(container, router)]);
+          } catch (err) {
+            toast.error(err.message || 'Failed to toggle pin');
+          }
+        });
+      });
+    };
+
+    renderPickerItems();
+  } catch (err) {
+    const grid = backdrop.querySelector('#picker-grid-container');
+    if (grid) grid.innerHTML = `<div style="color: #f87171; padding: 20px;">Failed to load prompts: ${err.message}</div>`;
   }
 }
 
@@ -195,6 +487,7 @@ async function fetchPrompts(container, router) {
       ...(state.categoryId ? { categoryId: state.categoryId } : {}),
       ...(state.status ? { status: state.status } : {}),
       ...(state.isPremium !== '' ? { isPremium: state.isPremium === 'true' } : {}),
+      ...(state.isFeatured !== '' ? { isFeatured: state.isFeatured === 'true' } : {}),
     };
 
     const res = await api.getPrompts(params);
@@ -208,18 +501,6 @@ async function fetchPrompts(container, router) {
       return;
     }
 
-function getUncroppedImageUrl(m) {
-  if (!m) return 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800';
-  if (typeof m === 'string') {
-    return m.replace(/\/c_thumb,g_auto[^\/]*\//, '/c_limit,w_1600/');
-  }
-  const url = m.mediaUrl || m.secureUrl || m.thumbnailUrl || '';
-  if (url) {
-    return url.replace(/\/c_thumb,g_auto[^\/]*\//, '/c_limit,w_1600/');
-  }
-  return 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800';
-}
-
     tbody.innerHTML = state.prompts
       .map((p) => {
         const thumbUrl = p.media && p.media.length ? getUncroppedImageUrl(p.media[0]) : 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800';
@@ -228,6 +509,8 @@ function getUncroppedImageUrl(m) {
         const viewCount = p.viewCount ?? 0;
         const favoriteCount = p.favoriteCount ?? 0;
         const safeTitle = (p.title || '').replace(/"/g, '&quot;');
+        const isPinned = state.pinnedIds.includes(p.id);
+        const pinRank = isPinned ? state.pinnedIds.indexOf(p.id) + 1 : 0;
 
         return `
           <tr>
@@ -243,6 +526,8 @@ function getUncroppedImageUrl(m) {
             <td>
               <div style="display: flex; gap: 4px; flex-wrap: wrap;">
                 <span class="badge badge-cyan">${p.contentType || 'IMAGE'}</span>
+                ${isPinned ? `<span class="badge" style="background: rgba(245, 158, 11, 0.25); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.5); font-weight: 700;">📌 Top #${pinRank}</span>` : ''}
+                ${(p.isFeatured || (p.sortOrder && p.sortOrder > 0)) && !isPinned ? `<span class="badge" style="background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.4); font-weight: 700;">⭐ Priority ${p.sortOrder > 0 ? '#' + p.sortOrder : ''}</span>` : ''}
                 ${p.isPremium ? '<span class="badge" style="background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.4); font-weight: 700;">PREMIUM</span>' : ''}
               </div>
             </td>
@@ -263,7 +548,10 @@ function getUncroppedImageUrl(m) {
               </span>
             </td>
             <td style="text-align: right;">
-              <div style="display: inline-flex; gap: 6px;">
+              <div style="display: inline-flex; gap: 6px; align-items: center;">
+                <button class="btn btn-sm toggle-pin-action-btn ${isPinned ? 'btn-warning' : 'btn-secondary'}" data-id="${p.id}" title="${isPinned ? 'Currently Top #' + pinRank + ' of feed. Click to unpin.' : 'Pin this image to show at the very top of the feed'}" style="font-size: 0.76rem; font-weight: 600; padding: 3px 8px;">
+                  ${isPinned ? '⭐ #' + pinRank : '📌 Pin'}
+                </button>
                 <button class="btn btn-secondary btn-sm edit-prompt-btn" data-id="${p.id}" title="Edit Full-Screen">
                   <i data-lucide="edit-3" style="width: 14px; height: 14px;"></i>
                 </button>
@@ -293,6 +581,21 @@ function getUncroppedImageUrl(m) {
       });
     });
 
+    // Bind pin toggle buttons in table rows
+    tbody.querySelectorAll('.toggle-pin-action-btn').forEach((btn) => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const id = btn.getAttribute('data-id');
+        try {
+          const toggleRes = await api.toggleTopPinnedPrompt(id);
+          toast.success(toggleRes.message || 'Updated top pinned prompt');
+          await Promise.all([fetchTopPinnedPrompts(container, router), fetchPrompts(container, router)]);
+        } catch (err) {
+          toast.error(err.message || 'Failed to update pinned status');
+        }
+      });
+    });
+
     // Bind row action buttons
     tbody.querySelectorAll('.edit-prompt-btn').forEach((btn) => {
       btn.addEventListener('click', () => {
@@ -314,7 +617,7 @@ function getUncroppedImageUrl(m) {
             try {
               await api.deletePrompt(id);
               toast.success('Prompt deleted successfully');
-              await fetchPrompts(container, router);
+              await Promise.all([fetchTopPinnedPrompts(container, router), fetchPrompts(container, router)]);
             } catch (err) {
               toast.error(err.message || 'Failed to delete prompt');
               throw err;

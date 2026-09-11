@@ -117,6 +117,30 @@ export async function renderPromptEditor(container, router, promptId = null) {
               </div>
             </div>
 
+            <!-- Feed Priority / Pin to Top -->
+            <div style="background: rgba(99, 102, 241, 0.08); border: 1px solid rgba(99, 102, 241, 0.25); border-radius: var(--radius-md); padding: 14px 16px; display: flex; flex-direction: column; gap: 10px;">
+              <div style="display: flex; align-items: center; justify-content: space-between;">
+                <div>
+                  <div style="font-weight: 600; color: #fff; font-size: 0.9rem; display: flex; align-items: center; gap: 6px;">
+                    <i data-lucide="star" style="width: 16px; height: 16px; color: #fbbf24;"></i>
+                    Prioritize in Feed (Show First)
+                  </div>
+                  <div style="font-size: 0.76rem; color: #94a3b8; margin-top: 2px;">
+                    Prioritized prompts appear at the very top of feeds before daily shuffled content
+                  </div>
+                </div>
+                <label class="switch">
+                  <input type="checkbox" id="editor-is-priority" ${(prompt && (prompt.isFeatured || (prompt.sortOrder && prompt.sortOrder > 0))) ? 'checked' : ''} />
+                  <span class="slider"></span>
+                </label>
+              </div>
+
+              <div id="priority-rank-group" style="display: ${(prompt && (prompt.isFeatured || (prompt.sortOrder && prompt.sortOrder > 0))) ? 'block' : 'none'};">
+                <label class="form-label" for="editor-sort-order" style="font-size: 0.8rem; color: #cbd5e1;">Priority Rank Order (1 = Top / Highest)</label>
+                <input type="number" id="editor-sort-order" class="input-text" min="0" max="9999" placeholder="e.g. 1" value="${prompt && prompt.sortOrder ? prompt.sortOrder : 1}" style="width: 140px;" />
+              </div>
+            </div>
+
             <!-- Main Prompt Text -->
             <div class="form-group">
               <label class="form-label" for="editor-prompt-text">Prompt Script * (Users copy this text directly)</label>
@@ -165,6 +189,14 @@ export async function renderPromptEditor(container, router, promptId = null) {
   if (window.lucide) window.lucide.createIcons();
 
   renderMediaGallery();
+
+  const priorityToggle = container.querySelector('#editor-is-priority');
+  const priorityRankGroup = container.querySelector('#priority-rank-group');
+  priorityToggle?.addEventListener('change', (e) => {
+    if (priorityRankGroup) {
+      priorityRankGroup.style.display = e.target.checked ? 'block' : 'none';
+    }
+  });
 
   container.querySelector('#editor-back-btn')?.addEventListener('click', () => router.navigate('prompts'));
   container.querySelector('#editor-cancel-btn')?.addEventListener('click', () => router.navigate('prompts'));
@@ -329,6 +361,9 @@ export async function renderPromptEditor(container, router, promptId = null) {
     }
 
     const isPremium = container.querySelector('#editor-is-premium')?.value === 'true';
+    const isPriority = container.querySelector('#editor-is-priority')?.checked ?? false;
+    const sortOrderVal = isPriority ? parseInt(container.querySelector('#editor-sort-order')?.value || '1', 10) : 0;
+    const sortOrder = isNaN(sortOrderVal) ? (isPriority ? 1 : 0) : sortOrderVal;
 
     const payload = {
       title,
@@ -336,6 +371,8 @@ export async function renderPromptEditor(container, router, promptId = null) {
       contentType,
       status,
       isPremium,
+      isFeatured: isPriority,
+      sortOrder,
       promptText,
     };
 

@@ -30,6 +30,10 @@ export const publicPromptService = {
     return findPublicPromptsWithVideoGate({ page, limit, sort: 'latest' });
   },
 
+  dailyShuffle(page: number, limit: number, options?: { categoryId?: string; aiToolId?: string; contentType?: ContentType }) {
+    return findPublicPromptsWithVideoGate({ page, limit, sort: 'daily_shuffle', ...options });
+  },
+
   premium(page: number, limit: number) {
     return findPublicPromptsWithVideoGate({ page, limit, isPremium: true, sort: 'latest' });
   },

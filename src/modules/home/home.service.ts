@@ -16,30 +16,44 @@ import { findPublicPromptsWithVideoGate } from '@modules/prompts/prompt-visibili
  */
 export const homePublicService = {
   async getHome(limitPerSection = 10) {
-    const [trending, latest, premium, free, featured] = await Promise.all([
+    const [trending, latest, premium, free, featured, daily] = await Promise.all([
       findPublicPromptsWithVideoGate({ page: 1, limit: limitPerSection, sort: 'trending' }),
       findPublicPromptsWithVideoGate({ page: 1, limit: limitPerSection, sort: 'latest' }),
       findPublicPromptsWithVideoGate({ page: 1, limit: limitPerSection, isPremium: true, sort: 'latest' }),
       findPublicPromptsWithVideoGate({ page: 1, limit: limitPerSection, isPremium: false, sort: 'latest' }),
       findPublicPromptsWithVideoGate({ page: 1, limit: limitPerSection, isFeatured: true, sort: 'latest' }),
+      findPublicPromptsWithVideoGate({ page: 1, limit: limitPerSection * 2, sort: 'daily_shuffle' }),
     ]);
 
-    // Build smart interleaved mixed feed without duplicate prompts
+    // Build priority-first daily mixed feed without duplicate prompts
     const seenIds = new Set<string>();
     const mixed: any[] = [];
+
+    // Priority 1: Synchronized feed prompts (Top Pinned section items first, then shuffled)
+    for (const item of daily.items) {
+      if (!seenIds.has(item.id)) {
+        seenIds.add(item.id);
+        mixed.push(item);
+      }
+    }
+
+    // Priority 2: Additional Featured prompts
+    for (const item of featured.items) {
+      if (!seenIds.has(item.id)) {
+        seenIds.add(item.id);
+        mixed.push(item);
+      }
+    }
+
+    // Fallback interleaving for any remaining items from other categories
     const maxLen = Math.max(
       trending.items.length,
       latest.items.length,
       premium.items.length,
       free.items.length,
-      featured.items.length,
     );
 
     for (let i = 0; i < maxLen; i++) {
-      if (featured.items[i] && !seenIds.has(featured.items[i].id)) {
-        seenIds.add(featured.items[i].id);
-        mixed.push(featured.items[i]);
-      }
       if (trending.items[i] && !seenIds.has(trending.items[i].id)) {
         seenIds.add(trending.items[i].id);
         mixed.push(trending.items[i]);

@@ -68,7 +68,7 @@ export type PromptListQuery = z.infer<typeof promptListQuerySchema>;
 // ---------------------------------------------------------------------
 // Public browsing / search (Sections 14, 29, 31)
 // ---------------------------------------------------------------------
-const sortEnum = z.enum(['latest', 'trending', 'popular', 'most_viewed', 'most_favorited', 'most_copied']);
+const sortEnum = z.enum(['latest', 'trending', 'popular', 'most_viewed', 'most_favorited', 'most_copied', 'daily_shuffle']);
 
 export const publicPromptListQuerySchema = paginationQuerySchema.extend({
   categoryId: idSchema.optional(),
