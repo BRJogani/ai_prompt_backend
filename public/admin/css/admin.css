@@ -1645,4 +1645,90 @@ input:checked + .slider:before {
   border-color: var(--accent-cyan);
 }
 
+/* ==========================================================================
+   Play Store Listing Styles
+   ========================================================================== */
+.store-tab-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--text-secondary);
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+}
+
+.store-tab-btn:hover {
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+}
+
+.store-tab-btn.active {
+  color: #818cf8;
+  border-bottom-color: #818cf8;
+  background: rgba(99, 102, 241, 0.08);
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+}
+
+.char-pill {
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: var(--radius-full);
+  letter-spacing: 0.02em;
+}
+
+.char-pill-ok {
+  background: rgba(16, 185, 129, 0.15);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.char-pill-error {
+  background: rgba(244, 63, 94, 0.15);
+  color: #fb7185;
+  border: 1px solid rgba(244, 63, 94, 0.3);
+}
+
+.icon-squircle {
+  border-radius: 38px;
+}
+
+.mask-toggle-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.mask-toggle-btn:hover {
+  color: var(--text-primary);
+}
+
+.mask-toggle-btn.active {
+  background: #6366f1;
+  color: #ffffff;
+}
+
+.screenshot-card {
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.screenshot-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.6);
+}
+
 

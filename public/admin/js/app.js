@@ -12,6 +12,7 @@ import { renderAuditLogs } from './views/auditLogs.js';
 import { renderReports } from './views/reports.js';
 import { renderAdminUsers } from './views/adminUsers.js';
 import { renderPromptEditor } from './views/promptEditor.js';
+import { renderStoreListing } from './views/storeListing.js';
 
 class AdminApp {
   constructor() {
@@ -119,6 +120,11 @@ class AdminApp {
               <i data-lucide="dollar-sign" style="width: 18px; height: 18px;"></i>
               <span>Ad Config</span>
             </a>
+            <a class="nav-item ${this.currentView === 'store-listing' ? 'active' : ''}" data-view="store-listing">
+              <i data-lucide="play-circle" style="width: 18px; height: 18px;"></i>
+              <span>Play Store Listing</span>
+              <span class="nav-badge" style="background: rgba(16, 185, 129, 0.2); color: #34d399;">ASO</span>
+            </a>
 
             <span class="nav-section-title">Moderation & Staff</span>
             <a class="nav-item ${this.currentView === 'reports' ? 'active' : ''}" data-view="reports">
@@ -170,7 +176,7 @@ class AdminApp {
                 <span>MongoDB Atlas &bull; Live</span>
               </div>
 
-              <a href="/api/docs" target="_blank" class="btn btn-secondary btn-sm">
+              <a href="/api/docs" target="_blank" class="btn btn-secondary btn-sm" id="top-nav-api-docs">
                 <i data-lucide="book-open" style="width: 14px; height: 14px;"></i> API Docs
               </a>
 
@@ -239,6 +245,17 @@ class AdminApp {
       this.render();
     });
 
+    // Bind API Docs link to include current session token
+    const apiDocsLink = this.root.querySelector('#top-nav-api-docs');
+    if (apiDocsLink) {
+      apiDocsLink.addEventListener('click', () => {
+        const token = localStorage.getItem('admin_token');
+        if (token) {
+          apiDocsLink.href = `/api/docs?token=${encodeURIComponent(token)}`;
+        }
+      });
+    }
+
     // Render initial view
     this.renderMainContent();
   }
@@ -271,6 +288,9 @@ class AdminApp {
         break;
       case 'ad-config':
         renderAdConfig(container, options);
+        break;
+      case 'store-listing':
+        renderStoreListing(container, options);
         break;
       case 'reports':
         renderReports(container, this);

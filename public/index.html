@@ -1,0 +1,1030 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PromptAI — Curated AI Art & Video Prompts for Midjourney, DALL-E, Sora</title>
+  <meta name="description" content="Explore, copy, and test 10,000+ battle-tested prompts for Midjourney, DALL-E 3, OpenAI Sora, Stable Diffusion and Leonardo AI. Download free on Google Play." />
+  
+  <!-- Modern Typography from Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@500;600;700;800;900&display=swap" rel="stylesheet" />
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <style>
+    :root {
+      --bg-dark: #070a14;
+      --bg-card: rgba(18, 26, 47, 0.75);
+      --bg-card-hover: rgba(28, 40, 70, 0.85);
+      --border-subtle: rgba(255, 255, 255, 0.08);
+      --border-glow: rgba(99, 102, 241, 0.4);
+      --primary: #6366f1;
+      --primary-hover: #4f46e5;
+      --accent-cyan: #06b6d4;
+      --accent-emerald: #10b981;
+      --accent-purple: #a855f7;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --radius-sm: 8px;
+      --radius-md: 16px;
+      --radius-lg: 24px;
+      --radius-full: 9999px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      line-height: 1.6;
+      overflow-x: hidden;
+      position: relative;
+    }
+
+    /* Ambient Background Glows */
+    .ambient-glow-1 {
+      position: absolute;
+      top: -120px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 900px;
+      height: 650px;
+      background: radial-gradient(circle, rgba(99, 102, 241, 0.25) 0%, rgba(6, 182, 212, 0.12) 40%, transparent 70%);
+      filter: blur(80px);
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    .ambient-glow-2 {
+      position: absolute;
+      top: 1400px;
+      right: -100px;
+      width: 700px;
+      height: 600px;
+      background: radial-gradient(circle, rgba(168, 85, 247, 0.18) 0%, rgba(16, 185, 129, 0.08) 50%, transparent 70%);
+      filter: blur(90px);
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 24px;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* Navigation */
+    .navbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px 0;
+      border-bottom: 1px solid var(--border-subtle);
+      position: sticky;
+      top: 0;
+      background: rgba(7, 10, 20, 0.85);
+      backdrop-filter: blur(16px);
+      z-index: 100;
+    }
+
+    .nav-brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+    }
+
+    .nav-icon {
+      width: 42px;
+      height: 42px;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 0 20px rgba(99, 102, 241, 0.5);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      background: #0f172a;
+    }
+
+    .nav-icon img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .nav-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.35rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      background: linear-gradient(135deg, #ffffff 40%, #818cf8 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 28px;
+    }
+
+    .nav-links a {
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 0.92rem;
+      font-weight: 500;
+      transition: color 0.2s;
+    }
+
+    .nav-links a:hover {
+      color: #fff;
+    }
+
+    .nav-cta {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    /* Hero Section */
+    .hero {
+      padding: 70px 0 60px 0;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(99, 102, 241, 0.15);
+      border: 1px solid rgba(99, 102, 241, 0.35);
+      padding: 6px 16px;
+      border-radius: var(--radius-full);
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #a5b4fc;
+      margin-bottom: 28px;
+      box-shadow: 0 0 25px -5px rgba(99, 102, 241, 0.4);
+    }
+
+    .hero-icon-wrapper {
+      position: relative;
+      margin-bottom: 28px;
+      display: inline-block;
+    }
+
+    .hero-app-icon {
+      width: 128px;
+      height: 128px;
+      border-radius: 32px;
+      overflow: hidden;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.7), 0 0 40px rgba(99, 102, 241, 0.5);
+      border: 2px solid rgba(255, 255, 255, 0.2);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      background: #0f172a;
+    }
+
+    .hero-app-icon:hover {
+      transform: translateY(-4px) scale(1.03);
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8), 0 0 50px rgba(6, 182, 212, 0.6);
+    }
+
+    .hero-app-icon img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .hero-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: clamp(2.4rem, 5vw, 4rem);
+      font-weight: 900;
+      letter-spacing: -0.03em;
+      line-height: 1.15;
+      margin-bottom: 20px;
+      max-width: 880px;
+    }
+
+    .hero-title span.gradient-text {
+      background: linear-gradient(135deg, #a855f7 0%, #6366f1 50%, #06b6d4 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero-desc {
+      font-size: clamp(1rem, 2vw, 1.25rem);
+      color: var(--text-muted);
+      max-width: 720px;
+      margin-bottom: 36px;
+      line-height: 1.6;
+    }
+
+    /* Google Play Store Button */
+    .playstore-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 14px;
+      background: #000000;
+      color: #ffffff;
+      padding: 12px 28px;
+      border-radius: 14px;
+      text-decoration: none;
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6), 0 0 25px rgba(0, 230, 118, 0.25);
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      cursor: pointer;
+    }
+
+    .playstore-btn:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.7), 0 0 35px rgba(0, 230, 118, 0.45);
+      border-color: #00e676;
+    }
+
+    .playstore-btn svg {
+      width: 32px;
+      height: 32px;
+      flex-shrink: 0;
+    }
+
+    .playstore-text-group {
+      display: flex;
+      flex-direction: column;
+      text-align: left;
+    }
+
+    .playstore-sub {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #94a3b8;
+      line-height: 1.1;
+    }
+
+    .playstore-main {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.3rem;
+      font-weight: 700;
+      line-height: 1.1;
+      color: #fff;
+      letter-spacing: -0.01em;
+    }
+
+    .hero-actions {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .btn-secondary-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 14px 24px;
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid var(--border-subtle);
+      color: #fff;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 0.95rem;
+      transition: all 0.2s;
+    }
+
+    .btn-secondary-link:hover {
+      background: rgba(255, 255, 255, 0.12);
+      border-color: rgba(255, 255, 255, 0.25);
+    }
+
+    /* Stats Pill Strip */
+    .stats-strip {
+      display: flex;
+      justify-content: center;
+      gap: 36px;
+      margin-top: 50px;
+      padding: 16px 28px;
+      background: rgba(15, 23, 42, 0.6);
+      border-radius: var(--radius-full);
+      border: 1px solid var(--border-subtle);
+      backdrop-filter: blur(12px);
+      flex-wrap: wrap;
+    }
+
+    .stat-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.88rem;
+    }
+
+    .stat-value {
+      font-weight: 800;
+      color: #fff;
+    }
+
+    .stat-label {
+      color: var(--text-muted);
+    }
+
+    /* Section Styling */
+    .section-title-wrap {
+      text-align: center;
+      margin-bottom: 48px;
+    }
+
+    .section-badge {
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--accent-cyan);
+      margin-bottom: 8px;
+      display: inline-block;
+    }
+
+    .section-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: clamp(2rem, 3.5vw, 2.8rem);
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+
+    .section-desc {
+      color: var(--text-muted);
+      font-size: 1rem;
+      max-width: 600px;
+      margin: 10px auto 0 auto;
+    }
+
+    /* How It Works Steps */
+    .how-it-works {
+      padding: 80px 0;
+    }
+
+    .steps-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 24px;
+      position: relative;
+    }
+
+    .step-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 32px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .step-card:hover {
+      transform: translateY(-6px);
+      background: var(--bg-card-hover);
+      border-color: var(--border-glow);
+      box-shadow: 0 15px 35px -10px rgba(99, 102, 241, 0.3);
+    }
+
+    .step-num-badge {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.2rem;
+      font-weight: 800;
+      color: #fff;
+      box-shadow: 0 0 20px rgba(99, 102, 241, 0.4);
+    }
+
+    .step-card:nth-child(1) .step-num-badge { background: linear-gradient(135deg, #6366f1, #06b6d4); }
+    .step-card:nth-child(2) .step-num-badge { background: linear-gradient(135deg, #06b6d4, #10b981); }
+    .step-card:nth-child(3) .step-num-badge { background: linear-gradient(135deg, #a855f7, #ec4899); }
+    .step-card:nth-child(4) .step-num-badge { background: linear-gradient(135deg, #f59e0b, #ef4444); }
+
+    .step-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .step-text {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      line-height: 1.6;
+    }
+
+    .step-tip {
+      font-size: 0.78rem;
+      background: rgba(255, 255, 255, 0.04);
+      padding: 8px 12px;
+      border-radius: var(--radius-sm);
+      color: #cbd5e1;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      margin-top: auto;
+    }
+
+    /* Interactive Prompt Preview Playground */
+    .playground-section {
+      padding: 60px 0 80px 0;
+    }
+
+    .prompt-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 24px;
+    }
+
+    .prompt-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      transition: all 0.25s ease;
+    }
+
+    .prompt-card:hover {
+      border-color: rgba(99, 102, 241, 0.4);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+      transform: translateY(-3px);
+    }
+
+    .prompt-banner {
+      height: 160px;
+      position: relative;
+      display: flex;
+      align-items: flex-end;
+      padding: 14px 18px;
+    }
+
+    .prompt-banner-1 { background: linear-gradient(135deg, #1e1b4b, #311042); }
+    .prompt-banner-2 { background: linear-gradient(135deg, #0f2027, #2c5364); }
+    .prompt-banner-3 { background: linear-gradient(135deg, #1f1c2c, #928dab); }
+
+    .prompt-engine-tag {
+      background: rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(8px);
+      padding: 4px 12px;
+      border-radius: var(--radius-full);
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: #fff;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+    }
+
+    .prompt-content {
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      flex: 1;
+    }
+
+    .prompt-title {
+      font-weight: 700;
+      color: #fff;
+      font-size: 1.05rem;
+    }
+
+    .prompt-text-box {
+      background: rgba(10, 15, 29, 0.85);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: var(--radius-sm);
+      padding: 12px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 0.82rem;
+      color: #e2e8f0;
+      line-height: 1.5;
+      position: relative;
+    }
+
+    .prompt-tags-row {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .prompt-tag {
+      font-size: 0.72rem;
+      padding: 2px 8px;
+      background: rgba(255, 255, 255, 0.06);
+      border-radius: 6px;
+      color: #94a3b8;
+    }
+
+    .copy-prompt-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      background: linear-gradient(135deg, #6366f1, #06b6d4);
+      color: white;
+      border: none;
+      padding: 10px 18px;
+      border-radius: var(--radius-sm);
+      font-weight: 600;
+      font-size: 0.88rem;
+      cursor: pointer;
+      transition: opacity 0.2s, transform 0.15s;
+    }
+
+    .copy-prompt-btn:hover {
+      opacity: 0.92;
+      transform: translateY(-1px);
+    }
+
+    /* Engine Badges Section */
+    .engines-bar {
+      padding: 30px 0 60px 0;
+      text-align: center;
+    }
+
+    .engines-list {
+      display: flex;
+      justify-content: center;
+      gap: 14px;
+      flex-wrap: wrap;
+      margin-top: 20px;
+    }
+
+    .engine-pill {
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid var(--border-subtle);
+      padding: 8px 18px;
+      border-radius: var(--radius-full);
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #cbd5e1;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* Big CTA Banner */
+    .cta-banner {
+      background: linear-gradient(135deg, rgba(30, 27, 75, 0.9) 0%, rgba(15, 23, 42, 0.95) 100%);
+      border: 1px solid rgba(99, 102, 241, 0.35);
+      border-radius: var(--radius-lg);
+      padding: 50px 40px;
+      text-align: center;
+      margin: 40px 0 80px 0;
+      box-shadow: 0 20px 50px -10px rgba(99, 102, 241, 0.3);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .cta-banner h2 {
+      font-family: 'Outfit', sans-serif;
+      font-size: clamp(1.8rem, 3vw, 2.6rem);
+      font-weight: 800;
+      margin-bottom: 14px;
+    }
+
+    .cta-banner p {
+      color: var(--text-muted);
+      font-size: 1.05rem;
+      max-width: 620px;
+      margin-bottom: 30px;
+    }
+
+    /* Footer */
+    footer {
+      border-top: 1px solid var(--border-subtle);
+      padding: 40px 0;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+    }
+
+    .footer-content {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 20px;
+    }
+
+    .footer-links {
+      display: flex;
+      gap: 20px;
+    }
+
+    .footer-links a {
+      color: var(--text-muted);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+
+    .footer-links a:hover {
+      color: #fff;
+    }
+
+    /* Toast Notification */
+    #toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: #10b981;
+      color: white;
+      padding: 12px 20px;
+      border-radius: 12px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.6);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      opacity: 0;
+      transform: translateY(12px);
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      pointer-events: none;
+      z-index: 1000;
+    }
+
+    #toast.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    @media (max-width: 768px) {
+      .nav-links { display: none; }
+      .stats-strip { gap: 18px; border-radius: 16px; }
+      .cta-banner { padding: 36px 20px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Ambient Light Accents -->
+  <div class="ambient-glow-1"></div>
+  <div class="ambient-glow-2"></div>
+
+  <div class="container">
+    
+    <!-- Navigation Bar -->
+    <header class="navbar">
+      <a href="/" class="nav-brand">
+        <div class="nav-icon">
+          <img src="/admin/assets/playstore/app-icon-512.jpg" alt="PromptAI Icon" onerror="this.src='/admin/assets/playstore/app-icon-512.jpg'" />
+        </div>
+        <span class="nav-title">PromptAI</span>
+      </a>
+
+      <nav class="nav-links">
+        <a href="#how-it-works">How to Use</a>
+        <a href="#prompts">Explore Prompts</a>
+        <a href="#engines">AI Engines</a>
+      </nav>
+
+      <div class="nav-cta">
+        <a href="https://play.google.com/store/apps/details?id=com.aiprompt.inspiration" target="_blank" class="playstore-btn" style="padding: 8px 18px;">
+          <svg viewBox="0 0 40 40">
+            <path d="M7 6l22 14L7 34z" fill="#00e676" />
+            <path d="M29 20L7 6l13 14z" fill="#00b0ff" />
+            <path d="M20 20l9 0L7 34z" fill="#ff1744" />
+            <path d="M29 20l5-3-5-3z" fill="#ffd600" />
+          </svg>
+          <div class="playstore-text-group">
+            <span class="playstore-sub" style="font-size: 0.62rem;">Get it on</span>
+            <span class="playstore-main" style="font-size: 1.05rem;">Google Play</span>
+          </div>
+        </a>
+      </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero">
+      <div class="hero-badge">
+        <i data-lucide="sparkles" style="width: 16px; height: 16px;"></i>
+        <span>Over 10,000+ Curated Battle-Tested AI Prompts</span>
+      </div>
+
+      <!-- App Icon Showcase -->
+      <div class="hero-icon-wrapper">
+        <div class="hero-app-icon">
+          <img src="/admin/assets/playstore/app-icon-512.jpg" alt="PromptAI App Icon" onerror="this.src='/admin/assets/playstore/app-icon-512.jpg'" />
+        </div>
+      </div>
+
+      <h1 class="hero-title">
+        The Ultimate Inspiration Hub for <span class="gradient-text">AI Art & Video Prompts</span>
+      </h1>
+
+      <p class="hero-desc">
+        Never struggle with blank canvas syndrome or distorted generations again. Discover thousands of hand-crafted, parameter-tuned prompts ready for Midjourney, DALL-E 3, OpenAI Sora, and Runway.
+      </p>
+
+      <!-- Action Buttons -->
+      <div class="hero-actions">
+        <!-- Main Google Play Store Button -->
+        <a href="https://play.google.com/store/apps/details?id=com.aiprompt.inspiration" id="hero-playstore-btn" target="_blank" class="playstore-btn">
+          <svg viewBox="0 0 40 40">
+            <path d="M7 6l22 14L7 34z" fill="#00e676" />
+            <path d="M29 20L7 6l13 14z" fill="#00b0ff" />
+            <path d="M20 20l9 0L7 34z" fill="#ff1744" />
+            <path d="M29 20l5-3-5-3z" fill="#ffd600" />
+          </svg>
+          <div class="playstore-text-group">
+            <span class="playstore-sub">Get it on</span>
+            <span class="playstore-main">Google Play</span>
+          </div>
+        </a>
+
+        <a href="#how-it-works" class="btn-secondary-link">
+          <i data-lucide="help-circle" style="width: 18px; height: 18px;"></i>
+          <span>How to Use the App</span>
+        </a>
+      </div>
+
+      <!-- Live Stats Strip -->
+      <div class="stats-strip">
+        <div class="stat-item">
+          <i data-lucide="star" style="color: #fbbf24; width: 18px; height: 18px; fill: #fbbf24;"></i>
+          <span class="stat-value">4.8 / 5.0</span>
+          <span class="stat-label">(14K+ Reviews)</span>
+        </div>
+        <div class="stat-item">
+          <i data-lucide="download" style="color: #10b981; width: 18px; height: 18px;"></i>
+          <span class="stat-value">100K+</span>
+          <span class="stat-label">Active Creators</span>
+        </div>
+        <div class="stat-item">
+          <i data-lucide="layers" style="color: #06b6d4; width: 18px; height: 18px;"></i>
+          <span class="stat-value">30+</span>
+          <span class="stat-label">Art & Video Categories</span>
+        </div>
+        <div class="stat-item">
+          <i data-lucide="shield-check" style="color: #a855f7; width: 18px; height: 18px;"></i>
+          <span class="stat-value">100% Free & Private</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- How to Use Section -->
+    <section class="how-it-works" id="how-it-works">
+      <div class="section-title-wrap">
+        <span class="section-badge">Simple & Powerful Workflow</span>
+        <h2 class="section-title">How to Use PromptAI</h2>
+        <p class="section-desc">Create museum-grade AI images and cinematic motion videos in 4 effortless steps.</p>
+      </div>
+
+      <div class="steps-grid">
+        
+        <!-- Step 1 -->
+        <div class="step-card">
+          <div class="step-num-badge">1</div>
+          <h3 class="step-title">Explore & Discover</h3>
+          <p class="step-text">
+            Browse through an infinite feed of trending prompts or filter by style: Cyberpunk, Anime, Photorealistic 8K, Architecture, 3D Isometric, or AI Video Reels.
+          </p>
+          <div class="step-tip">
+            💡 <strong>Tip:</strong> The feed rotates synchronously worldwide every single day!
+          </div>
+        </div>
+
+        <!-- Step 2 -->
+        <div class="step-card">
+          <div class="step-num-badge">2</div>
+          <h3 class="step-title">1-Click Copy & Inspect</h3>
+          <p class="step-text">
+            Tap the "Copy Prompt" button. The exact tuned formula is copied to your clipboard — including aspect ratio flags (<code>--ar 16:9</code>), stylize weights, and camera motion cues.
+          </p>
+          <div class="step-tip">
+            ⚡ <strong>Instant:</strong> Zero formatting or parameter guesswork needed.
+          </div>
+        </div>
+
+        <!-- Step 3 -->
+        <div class="step-card">
+          <div class="step-num-badge">3</div>
+          <h3 class="step-title">Paste & Generate</h3>
+          <p class="step-text">
+            Switch over to Midjourney, ChatGPT Plus, DALL-E 3, Runway Gen-3, Sora, or Leonardo AI. Paste the prompt and hit generate to witness mind-bending results.
+          </p>
+          <div class="step-tip">
+            🚀 <strong>Ready:</strong> Compatible with all leading generative AI models.
+          </div>
+        </div>
+
+        <!-- Step 4 -->
+        <div class="step-card">
+          <div class="step-num-badge">4</div>
+          <h3 class="step-title">Save & Build Vault</h3>
+          <p class="step-text">
+            Hit the heart icon to save prompts into your personal offline favorites. Organize your go-to aesthetics for projects, clients, or social media.
+          </p>
+          <div class="step-tip">
+            🔒 <strong>Private:</strong> Saved locally on your device with complete privacy.
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- Interactive Prompt Playground -->
+    <section class="playground-section" id="prompts">
+      <div class="section-title-wrap">
+        <span class="section-badge">Live Interactive Tryout</span>
+        <h2 class="section-title">Try Copying a Prompt Right Now</h2>
+        <p class="section-desc">Experience the 1-click copy speed directly on this page.</p>
+      </div>
+
+      <div class="prompt-grid">
+        
+        <!-- Prompt 1 -->
+        <div class="prompt-card">
+          <div class="prompt-banner prompt-banner-1">
+            <span class="prompt-engine-tag">Midjourney v6</span>
+          </div>
+          <div class="prompt-content">
+            <h4 class="prompt-title">Cyberpunk Neon Rain Samurai</h4>
+            <div class="prompt-text-box">
+              Cinematic wide shot of a futuristic cyber samurai standing on wet neon street in rain, reflections of glowing holographic billboards, 8k, photorealistic, Unreal Engine 5 render --ar 16:9 --v 6.0
+            </div>
+            <div class="prompt-tags-row">
+              <span class="prompt-tag">#Cyberpunk</span>
+              <span class="prompt-tag">#16:9</span>
+              <span class="prompt-tag">#Cinematic</span>
+            </div>
+            <button class="copy-prompt-btn" data-text="Cinematic wide shot of a futuristic cyber samurai standing on wet neon street in rain, reflections of glowing holographic billboards, 8k, photorealistic, Unreal Engine 5 render --ar 16:9 --v 6.0">
+              <i data-lucide="copy" style="width: 16px; height: 16px;"></i>
+              <span>Copy Prompt</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Prompt 2 -->
+        <div class="prompt-card">
+          <div class="prompt-banner prompt-banner-2">
+            <span class="prompt-engine-tag">OpenAI Sora / Runway</span>
+          </div>
+          <div class="prompt-content">
+            <h4 class="prompt-title">Cosmic Bioluminescent River</h4>
+            <div class="prompt-text-box">
+              FPV drone flythrough along glowing crystalline river in mystical subterranean forest, bioluminescent flora pulsing with light, ambient particles, smooth 60fps cinematic camera orbit
+            </div>
+            <div class="prompt-tags-row">
+              <span class="prompt-tag">#AIVideo</span>
+              <span class="prompt-tag">#Motion:Orbit</span>
+              <span class="prompt-tag">#Sora</span>
+            </div>
+            <button class="copy-prompt-btn" data-text="FPV drone flythrough along glowing crystalline river in mystical subterranean forest, bioluminescent flora pulsing with light, ambient particles, smooth 60fps cinematic camera orbit">
+              <i data-lucide="copy" style="width: 16px; height: 16px;"></i>
+              <span>Copy Prompt</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Prompt 3 -->
+        <div class="prompt-card">
+          <div class="prompt-banner prompt-banner-3">
+            <span class="prompt-engine-tag">DALL-E 3 / Flux</span>
+          </div>
+          <div class="prompt-content">
+            <h4 class="prompt-title">Isometric Cozy Hacker Workspace</h4>
+            <div class="prompt-text-box">
+              3D isometric diorama of a cozy retrofuturistic developer desk, dual curved holographic monitors, glowing neon bonsai tree, warm amber desk lamp, soft ambient occlusion clay render
+            </div>
+            <div class="prompt-tags-row">
+              <span class="prompt-tag">#3DIsometric</span>
+              <span class="prompt-tag">#ClayRender</span>
+              <span class="prompt-tag">#Square</span>
+            </div>
+            <button class="copy-prompt-btn" data-text="3D isometric diorama of a cozy retrofuturistic developer desk, dual curved holographic monitors, glowing neon bonsai tree, warm amber desk lamp, soft ambient occlusion clay render">
+              <i data-lucide="copy" style="width: 16px; height: 16px;"></i>
+              <span>Copy Prompt</span>
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- Supported AI Engines -->
+    <section class="engines-bar" id="engines">
+      <span class="section-badge">Universal Compatibility</span>
+      <h3 style="font-family: 'Outfit', sans-serif; font-size: 1.6rem; font-weight: 700;">Prompts Engineered for All Major AI Engines</h3>
+      <div class="engines-list">
+        <div class="engine-pill">Midjourney v6</div>
+        <div class="engine-pill">DALL-E 3</div>
+        <div class="engine-pill">OpenAI Sora</div>
+        <div class="engine-pill">Runway Gen-3</div>
+        <div class="engine-pill">Stable Diffusion XL</div>
+        <div class="engine-pill">Flux.1</div>
+        <div class="engine-pill">Leonardo AI</div>
+        <div class="engine-pill">Luma Dream Machine</div>
+        <div class="engine-pill">Adobe Firefly</div>
+      </div>
+    </section>
+
+    <!-- Big Download Call To Action -->
+    <section class="cta-banner">
+      <h2>Ready to Create Mind-Blowing AI Art?</h2>
+      <p>
+        Download PromptAI now on Google Play to unlock thousands of daily curated prompts, copy them with a single tap, and level up your prompt engineering skills.
+      </p>
+
+      <a href="https://play.google.com/store/apps/details?id=com.aiprompt.inspiration" target="_blank" class="playstore-btn">
+        <svg viewBox="0 0 40 40">
+          <path d="M7 6l22 14L7 34z" fill="#00e676" />
+          <path d="M29 20L7 6l13 14z" fill="#00b0ff" />
+          <path d="M20 20l9 0L7 34z" fill="#ff1744" />
+          <path d="M29 20l5-3-5-3z" fill="#ffd600" />
+        </svg>
+        <div class="playstore-text-group">
+          <span class="playstore-sub">Download Free on</span>
+          <span class="playstore-main">Google Play</span>
+        </div>
+      </a>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+      <div class="footer-content">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <div class="nav-icon" style="width: 32px; height: 32px;">
+            <img src="/admin/assets/playstore/app-icon-512.jpg" alt="Icon" onerror="this.src='/admin/assets/playstore/app-icon-512.jpg'" />
+          </div>
+          <span>&copy; 2026 PromptAI &bull; AI Prompt Inspiration Platform. All rights reserved.</span>
+        </div>
+
+        <div class="footer-links">
+          <a href="#how-it-works">How to Use</a>
+          <a href="#prompts">Prompts</a>
+          <a href="/api/v1/health">System Health</a>
+          <a href="https://play.google.com/store/apps/details?id=com.aiprompt.inspiration" target="_blank">Google Play</a>
+        </div>
+      </div>
+    </footer>
+
+  </div>
+
+  <!-- Toast Notification element -->
+  <div id="toast">
+    <i data-lucide="check-circle" style="width: 18px; height: 18px;"></i>
+    <span id="toast-message">Copied prompt to clipboard!</span>
+  </div>
+
+  <script>
+    if (window.lucide) window.lucide.createIcons();
+
+    // Copy to clipboard logic with toast notification
+    const toast = document.getElementById('toast');
+    const toastMsg = document.getElementById('toast-message');
+    let toastTimeout;
+
+    function showToast(text) {
+      toastMsg.textContent = text;
+      toast.classList.add('show');
+      clearTimeout(toastTimeout);
+      toastTimeout = setTimeout(() => {
+        toast.classList.remove('show');
+      }, 2500);
+    }
+
+    document.querySelectorAll('.copy-prompt-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const text = btn.getAttribute('data-text');
+        navigator.clipboard.writeText(text).then(() => {
+          showToast('Prompt copied! Ready to paste into Midjourney or DALL-E');
+        }).catch(() => {
+          showToast('Failed to copy');
+        });
+      });
+    });
+
+    // Attempt to load dynamic Play Store URL if configured in backend remote config
+    fetch('/api/v1/app/config').then(r => r.json()).then(res => {
+      if (res && res.data) {
+        const storeUrlSetting = res.data.find(s => s.key === 'playstore_url' || s.key === 'store_url');
+        if (storeUrlSetting && storeUrlSetting.value) {
+          document.querySelectorAll('.playstore-btn').forEach(btn => {
+            btn.href = storeUrlSetting.value;
+          });
+        }
+      }
+    }).catch(() => {});
+  </script>
+</body>
+</html>

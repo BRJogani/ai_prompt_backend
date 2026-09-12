@@ -16,12 +16,12 @@ export function renderLogin(container, onLoginSuccess) {
         <form id="login-form" style="display: flex; flex-direction: column; gap: 20px;">
           <div class="form-group">
             <label class="form-label" for="login-email">Admin Email</label>
-            <input type="email" id="login-email" class="input-text" placeholder="admin@example.com" value="admin@example.com" required autocomplete="email" />
+            <input type="email" id="login-email" class="input-text" placeholder="admin@example.com" required autocomplete="email" />
           </div>
 
           <div class="form-group">
             <label class="form-label" for="login-password">Password</label>
-            <input type="password" id="login-password" class="input-text" placeholder="••••••••" value="ChangeMe123!" required autocomplete="current-password" />
+            <input type="password" id="login-password" class="input-text" placeholder="••••••••" required autocomplete="current-password" />
           </div>
 
           <button type="submit" class="btn btn-primary" id="login-submit-btn" style="padding: 12px; font-size: 0.95rem; margin-top: 8px;">
@@ -29,10 +29,6 @@ export function renderLogin(container, onLoginSuccess) {
             Sign In to Dashboard
           </button>
         </form>
-
-        <div style="margin-top: 24px; padding-top: 20px; border-top: 1px solid rgba(255, 255, 255, 0.08); text-align: center; font-size: 0.8rem; color: #64748b;">
-          Connected to MongoDB Atlas Backend API
-        </div>
       </div>
     </div>
   `;
@@ -52,7 +48,7 @@ export function renderLogin(container, onLoginSuccess) {
 
     try {
       const res = await api.login(email, password);
-      localStorage.setItem('admin_token', res.data.accessToken);
+      authState.token = res.data.accessToken;
       if (res.data.refreshToken) {
         localStorage.setItem('admin_refresh_token', res.data.refreshToken);
       }

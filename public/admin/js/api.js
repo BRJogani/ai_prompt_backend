@@ -9,8 +9,13 @@ export const authState = {
     return localStorage.getItem('admin_token');
   },
   set token(val) {
-    if (val) localStorage.getItem('admin_token', val);
-    else localStorage.removeItem('admin_token');
+    if (val) {
+      localStorage.setItem('admin_token', val);
+      document.cookie = `admin_token=${encodeURIComponent(val)}; path=/; max-age=86400; SameSite=Lax`;
+    } else {
+      localStorage.removeItem('admin_token');
+      document.cookie = 'admin_token=; path=/; max-age=0; SameSite=Lax';
+    }
   },
   get admin() {
     try {
@@ -27,6 +32,7 @@ export const authState = {
     localStorage.removeItem('admin_token');
     localStorage.removeItem('admin_refresh_token');
     localStorage.removeItem('admin_profile');
+    document.cookie = 'admin_token=; path=/; max-age=0; SameSite=Lax';
   },
 };
 

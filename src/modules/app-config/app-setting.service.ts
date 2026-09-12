@@ -43,7 +43,7 @@ export const appSettingService = {
   async update(key: string, value: string, adminId: string, ipAddress?: string) {
     const existing = await appSettingRepository.findByKey(key);
     const autoCreatedKeys = ['shuffle_enabled', 'daily_shuffle_enabled', 'shuffle_interval', 'daily_shuffle_salt', 'top_pinned_prompt_ids'];
-    if (!existing && !autoCreatedKeys.includes(key)) {
+    if (!existing && !autoCreatedKeys.includes(key) && !key.startsWith('playstore_')) {
       throw new NotFoundError(`Setting "${key}" not found`);
     }
     const updated = await appSettingRepository.upsert(key, {

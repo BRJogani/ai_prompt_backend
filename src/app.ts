@@ -1,6 +1,8 @@
-import express, { Application, Request, Response } from 'express';
+import express, { Application, Request, Response, NextFunction } from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
+import { verifyAccessToken } from '@utils/jwt';
+import { adminRepository } from '@repositories/admin.repository';
 import compression from 'compression';
 import path from 'path';
 import swaggerUi from 'swagger-ui-express';
@@ -52,6 +54,10 @@ export function createApp(): Application {
   // ---- Logging ----------------------------------------------------------
   app.use(requestLogger);
 
+  // ---- Public Assets & Landing Page ---------------------------------------
+  const publicDir = path.join(process.cwd(), 'public');
+  app.use(express.static(publicDir));
+
   // ---- Admin Panel Web Application (SPA) -----------------------------------
   const adminPublicDir = path.join(process.cwd(), 'public', 'admin');
   app.use('/admin', express.static(adminPublicDir));
@@ -62,14 +68,65 @@ export function createApp(): Application {
   // ---- Rate limiting (applied to public API traffic) ------------------------
   app.use('/api', globalRateLimiter);
 
+  // ---- API documentation protection (Admin login required) ---------------
+  const requireDocsAuth = async (req: Request, res: Response, next: NextFunction) => {
+    // 1. Check Authorization header: Bearer <token>
+    const authHeader = req.headers.authorization;
+    let token = authHeader && authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : null;
+
+    // 2. Check query parameter ?token=...
+    if (!token && typeof req.query.token === 'string') {
+      token = req.query.token.trim();
+    }
+
+    // 3. Check admin_token cookie
+    if (!token && req.headers.cookie) {
+      const match = req.headers.cookie.match(/(?:^|;\s*)admin_token=([^;]+)/);
+      if (match) {
+        token = decodeURIComponent(match[1]);
+      }
+    }
+
+    if (!token) {
+      if (req.accepts('html')) {
+        return res.redirect('/admin');
+      }
+      return res.status(401).json({
+        success: false,
+        message: 'Unauthorized. Admin login required to access API documentation.',
+      });
+    }
+
+    try {
+      const payload = verifyAccessToken(token);
+      const admin = await adminRepository.findById(payload.sub);
+      if (!admin || !admin.isActive) {
+        if (req.accepts('html')) return res.redirect('/admin');
+        return res.status(401).json({
+          success: false,
+          message: 'Unauthorized. Inactive or invalid admin account.',
+        });
+      }
+      req.admin = { id: admin.id, email: admin.email, role: admin.role };
+      next();
+    } catch (_err) {
+      if (req.accepts('html')) return res.redirect('/admin');
+      return res.status(401).json({
+        success: false,
+        message: 'Unauthorized. Invalid or expired token.',
+      });
+    }
+  };
+
   // ---- API documentation --------------------------------------------------
-  app.get('/api/docs.json', (_req: Request, res: Response) => {
+  app.get('/api/docs.json', requireDocsAuth, (_req: Request, res: Response) => {
     res.setHeader('Content-Type', 'application/json');
     res.send(swaggerSpec);
   });
 
   app.use(
     '/api/docs',
+    requireDocsAuth,
     swaggerUi.serve,
     swaggerUi.setup(swaggerSpec, {
       customSiteTitle: 'AI Prompt Inspiration Platform &bull; Interactive API Docs',
@@ -89,14 +146,15 @@ export function createApp(): Application {
   );
 
   // ---- Root & versioned routes --------------------------------------------
-  app.get('/', (_req: Request, res: Response) => {
+  app.get('/', (req: Request, res: Response) => {
+    if (req.accepts('html')) {
+      res.sendFile(path.join(publicDir, 'index.html'));
+      return;
+    }
     res.json({
       success: true,
       message: 'AI Prompt Inspiration App API',
       version: 'v1',
-      adminPanel: '/admin',
-      docs: '/api/docs',
-      openapiJson: '/api/docs.json',
     });
   });
 
