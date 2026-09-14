@@ -129,7 +129,7 @@ export function createApp(): Application {
     requireDocsAuth,
     swaggerUi.serve,
     swaggerUi.setup(swaggerSpec, {
-      customSiteTitle: 'AI Prompt Inspiration Platform &bull; Interactive API Docs',
+      customSiteTitle: 'Viral AI Photo Prompt Platform &bull; Interactive API Docs',
       customCss: `
         .swagger-ui .topbar { display: none; }
         .swagger-ui .info { margin: 20px 0; }
@@ -153,7 +153,7 @@ export function createApp(): Application {
     }
     res.json({
       success: true,
-      message: 'AI Prompt Inspiration App API',
+      message: 'Viral AI Photo Prompt App API',
       version: 'v1',
     });
   });

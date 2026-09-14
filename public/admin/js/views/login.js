@@ -10,7 +10,7 @@ export function renderLogin(container, onLoginSuccess) {
             <i data-lucide="sparkles"></i>
           </div>
           <h2 style="font-family: 'Outfit', sans-serif; font-size: 1.6rem; font-weight: 700; color: #fff; margin-bottom: 6px;">Admin Portal</h2>
-          <p style="color: #94a3b8; font-size: 0.88rem;">AI Prompt Inspiration Platform</p>
+          <p style="color: #94a3b8; font-size: 0.88rem;">Viral AI Photo Prompt Platform</p>
         </div>
 
         <form id="login-form" style="display: flex; flex-direction: column; gap: 20px;">

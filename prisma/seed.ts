@@ -291,7 +291,7 @@ async function seedPrompts(
 // Default remote app settings / feature flags
 // ---------------------------------------------------------------------------
 const APP_SETTING_SEED: Array<{ key: string; value: string; valueType: string; description: string }> = [
-  { key: 'app_name', value: 'AI Prompt Inspiration', valueType: 'string', description: 'Display name shown in the app.' },
+  { key: 'app_name', value: 'Viral AI Photo Prompt', valueType: 'string', description: 'Display name shown in the app.' },
   { key: 'daily_shuffle_enabled', value: 'true', valueType: 'boolean', description: 'Feature flag: Daily randomized synchronized prompt shuffling across all devices.' },
   { key: 'daily_shuffle_salt', value: '', valueType: 'string', description: 'Dynamic salt seed for daily synchronized prompt shuffling.' },
   { key: 'video_enabled', value: 'true', valueType: 'boolean', description: 'Global video visibility kill switch (Section 16).' },
@@ -381,7 +381,7 @@ async function seedAppVersions() {
         maintenanceMode: false,
         storeUrl:
           v.platform === 'ANDROID'
-            ? 'https://play.google.com/store/apps/details?id=com.example.aipromptapp'
+            ? 'https://play.google.com/store/apps/details?id=com.gamesphere.viral.ai.photo.prompt.app'
             : 'https://apps.apple.com/app/id0000000000',
       },
     });

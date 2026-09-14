@@ -155,7 +155,7 @@ export const appSettingService = {
     const shuffleInterval = map.get('shuffle_interval') ?? 'DAILY';
 
     return {
-      appName: get('app_name', 'AI Prompt Inspiration'),
+      appName: get('app_name', 'Viral AI Photo Prompt'),
       supportEmail: get('support_email'),
       privacyPolicyUrl: get('privacy_policy_url'),
       termsUrl: get('terms_url'),

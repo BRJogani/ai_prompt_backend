@@ -301,7 +301,7 @@ async function seedHomeSections(categories) {
 // Default remote app settings / feature flags (Sections 27, 57, 60)
 // ---------------------------------------------------------------------------
 const APP_SETTING_SEED = [
-    { key: 'app_name', value: 'AI Prompt Inspiration', valueType: 'string', description: 'Display name shown in the app.' },
+    { key: 'app_name', value: 'Viral AI Photo Prompt', valueType: 'string', description: 'Display name shown in the app.' },
     { key: 'video_enabled', value: 'true', valueType: 'boolean', description: 'Global video visibility kill switch (Section 16).' },
     { key: 'search_enabled', value: 'true', valueType: 'boolean', description: 'Feature flag: search.' },
     { key: 'history_enabled', value: 'true', valueType: 'boolean', description: 'Feature flag: view history.' },
@@ -378,7 +378,7 @@ async function seedAppVersions() {
                 forceUpdate: false,
                 maintenanceMode: false,
                 storeUrl: v.platform === 'ANDROID'
-                    ? 'https://play.google.com/store/apps/details?id=com.example.aipromptapp'
+                    ? 'https://play.google.com/store/apps/details?id=com.gamesphere.viral.ai.photo.prompt.app'
                     : 'https://apps.apple.com/app/id0000000000',
             },
         });

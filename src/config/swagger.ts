@@ -4,12 +4,12 @@ import { env } from './env';
 const swaggerDefinition: swaggerJSDoc.OAS3Definition = {
   openapi: '3.0.3',
   info: {
-    title: 'AI Prompt Inspiration Platform API',
+    title: 'Viral AI Photo Prompt Platform API',
     version: '1.0.0',
     description: `
-## Complete REST API Documentation for AI Prompt Inspiration Platform
+## Complete REST API Documentation for Viral AI Photo Prompt Platform
 
-This API powers the **AI Prompt Inspiration Mobile App** (Flutter/iOS/Android) and the **Admin Control Panel**.
+This API powers the **Viral AI Photo Prompt Mobile App** (Flutter/iOS/Android) and the **Admin Control Panel**.
 
 ### Key Modules:
 - **Public Client APIs**: Home feed sections, prompt catalog, trending ranking, search, device-scoped favorites & history, analytics event tracking, remote configuration (feature flags & ad unit placements), and app version force/optional updates.

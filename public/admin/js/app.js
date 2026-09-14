@@ -166,7 +166,7 @@ class AdminApp {
                 <i data-lucide="menu" style="width: 19px; height: 19px;"></i>
               </button>
               <div style="font-size: 0.85rem; color: var(--text-secondary);">
-                AI Prompt Inspiration &bull; <span style="color: var(--primary); font-weight: 600;">Control Panel</span>
+                Viral AI Photo Prompt &bull; <span style="color: var(--primary); font-weight: 600;">Control Panel</span>
               </div>
             </div>
 

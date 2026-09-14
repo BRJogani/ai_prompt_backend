@@ -1,7 +1,7 @@
 {
   "name": "ai-prompt-inspiration-backend",
   "version": "1.0.0",
-  "description": "Production-ready backend for the AI Prompt Inspiration App",
+  "description": "Production-ready backend for the Viral AI Photo Prompt App",
   "main": "dist/server.js",
   "engines": {
     "node": ">=18.0.0"
