@@ -19,6 +19,7 @@ import { adminDashboardRouter } from '@modules/admin-dashboard/dashboard.routes'
 import { publicReportRouter, adminReportRouter } from '@modules/reports/report.routes';
 import { adminAuditLogRouter } from '@modules/audit-logs/audit-log.routes';
 import { adminAdminUserRouter } from '@modules/admin-users/admin-user.routes';
+import { adminPurchaseRouter, publicPurchaseRouter } from '@modules/purchases/purchase.routes';
 import { validate } from '@middleware/validate';
 import { promptSearchQuerySchema } from '@validators/prompt.validator';
 
@@ -55,6 +56,7 @@ router.use('/admin/dashboard', adminDashboardRouter);
 router.use('/admin/reports', adminReportRouter);
 router.use('/admin/audit-logs', adminAuditLogRouter);
 router.use('/admin/admin-users', adminAdminUserRouter);
+router.use('/admin/purchases', adminPurchaseRouter);
 
 // Public — reference data reads (Phase 4)
 router.use('/categories', publicCategoryRouter);
@@ -67,6 +69,7 @@ router.use('/prompts', publicPromptRoutes); // includes /trending, /popular, /la
 router.use('/favorites', favoriteRoutes);
 router.use('/history', historyRoutes);
 router.use('/analytics', publicAnalyticsRouter);
+router.use('/purchases', publicPurchaseRouter);
 
 // Public — remote configuration (Phase 7): drives feature flags, video
 // visibility, maintenance mode, and force/optional update prompts without

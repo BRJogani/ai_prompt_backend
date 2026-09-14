@@ -13,6 +13,7 @@ import { renderReports } from './views/reports.js';
 import { renderAdminUsers } from './views/adminUsers.js';
 import { renderPromptEditor } from './views/promptEditor.js';
 import { renderStoreListing } from './views/storeListing.js';
+import { renderPurchases } from './views/purchases.js';
 
 class AdminApp {
   constructor() {
@@ -124,6 +125,11 @@ class AdminApp {
               <i data-lucide="play-circle" style="width: 18px; height: 18px;"></i>
               <span>Play Store Listing</span>
               <span class="nav-badge" style="background: rgba(16, 185, 129, 0.2); color: #34d399;">ASO</span>
+            </a>
+            <a class="nav-item ${this.currentView === 'purchases' ? 'active' : ''}" data-view="purchases">
+              <i data-lucide="crown" style="width: 18px; height: 18px;"></i>
+              <span>Purchases</span>
+              <span class="nav-badge" style="background: rgba(245, 158, 11, 0.2); color: #fbbf24;">IAP</span>
             </a>
 
             <span class="nav-section-title">Moderation & Staff</span>
@@ -291,6 +297,9 @@ class AdminApp {
         break;
       case 'store-listing':
         renderStoreListing(container, options);
+        break;
+      case 'purchases':
+        renderPurchases(container, this);
         break;
       case 'reports':
         renderReports(container, this);

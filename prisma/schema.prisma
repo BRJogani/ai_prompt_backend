@@ -116,6 +116,15 @@ enum ReportStatus {
   DISMISSED
 }
 
+/// In-app purchase status.
+enum PurchaseStatus {
+  COMPLETED
+  PENDING
+  FAILED
+  RESTORED
+  REFUNDED
+}
+
 // =============================================================================
 // USERS — anonymous, device-identified (Section 4)
 // =============================================================================
@@ -123,27 +132,31 @@ enum ReportStatus {
 /// An anonymous app installation, identified by a client-generated UUID
 /// sent via the `X-Device-ID` header. No PII is collected.
 model User {
-  id           String         @id @default(auto()) @map("_id") @db.ObjectId
-  uniqueId     String         @unique @map("unique_id")
-  platform     DevicePlatform @default(OTHER)
-  appVersion   String?        @map("app_version")
-  deviceModel  String?        @map("device_model")
-  osVersion    String?        @map("os_version")
-  country      String?
-  language     String?
-  firstSeenAt  DateTime       @default(now()) @map("first_seen_at")
-  lastActiveAt DateTime       @default(now()) @map("last_active_at")
-  createdAt    DateTime       @default(now()) @map("created_at")
-  updatedAt    DateTime       @updatedAt @map("updated_at")
+  id               String         @id @default(auto()) @map("_id") @db.ObjectId
+  uniqueId         String         @unique @map("unique_id")
+  platform         DevicePlatform @default(OTHER)
+  appVersion       String?        @map("app_version")
+  deviceModel      String?        @map("device_model")
+  osVersion        String?        @map("os_version")
+  country          String?
+  language         String?
+  isPremium        Boolean        @default(false) @map("is_premium")
+  premiumExpiresAt DateTime?      @map("premium_expires_at")
+  firstSeenAt      DateTime       @default(now()) @map("first_seen_at")
+  lastActiveAt     DateTime       @default(now()) @map("last_active_at")
+  createdAt        DateTime       @default(now()) @map("created_at")
+  updatedAt        DateTime       @updatedAt @map("updated_at")
 
   favorites          Favorite[]
   history            History[]
   analyticsEvents    AnalyticsEvent[]
   reports            Report[]
   notificationTokens NotificationToken[]
+  purchases          Purchase[]
 
   @@index([platform])
   @@index([lastActiveAt])
+  @@index([isPremium])
   @@map("users")
 }
 
@@ -583,3 +596,31 @@ model NotificationToken {
   @@index([userId])
   @@map("notification_tokens")
 }
+
+// =============================================================================
+// IN-APP PURCHASES & PREMIUM ACCESS
+// =============================================================================
+
+model Purchase {
+  id            String         @id @default(auto()) @map("_id") @db.ObjectId
+  userId        String         @map("user_id") @db.ObjectId
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  productId     String         @map("product_id") // SKU e.g. 'ai_prompt'
+  orderId       String?        @map("order_id")
+  purchaseToken String?        @map("purchase_token")
+  platform      DevicePlatform @default(OTHER)
+  price         Float?
+  currency      String?        @default("USD")
+  status        PurchaseStatus @default(COMPLETED)
+  rawReceipt    String?        @map("raw_receipt")
+  purchaseDate  DateTime       @default(now()) @map("purchase_date")
+  createdAt     DateTime       @default(now()) @map("created_at")
+  updatedAt     DateTime       @updatedAt @map("updated_at")
+
+  @@index([userId])
+  @@index([productId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("purchases")
+}
+

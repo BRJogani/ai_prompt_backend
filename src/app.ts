@@ -56,7 +56,7 @@ export function createApp(): Application {
 
   // ---- Public Assets & Landing Page ---------------------------------------
   const publicDir = path.join(process.cwd(), 'public');
-  app.use(express.static(publicDir));
+  app.use(express.static(publicDir, { index: false }));
 
   // ---- Admin Panel Web Application (SPA) -----------------------------------
   const adminPublicDir = path.join(process.cwd(), 'public', 'admin');
@@ -147,7 +147,7 @@ export function createApp(): Application {
 
   // ---- Root & versioned routes --------------------------------------------
   app.get('/', (req: Request, res: Response) => {
-    if (req.accepts('html')) {
+    if (req.accepts(['json', 'html']) === 'html') {
       res.sendFile(path.join(publicDir, 'index.html'));
       return;
     }

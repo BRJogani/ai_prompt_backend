@@ -196,6 +196,14 @@ export const api = {
   deleteMedia: (mediaId) => apiRequest(`/admin/media/${mediaId}`, { method: 'DELETE' }),
   reorderMedia: (promptId, order) => apiRequest(`/admin/prompts/${promptId}/media/reorder`, { method: 'PATCH', body: JSON.stringify({ order }) }),
 
+  // In-App Purchases & Premium Transactions
+  getPurchases: (params = {}) => {
+    const q = new URLSearchParams(params).toString();
+    return apiRequest(`/admin/purchases${q ? `?${q}` : ''}`);
+  },
+  getPurchaseStats: () => apiRequest('/admin/purchases/stats'),
+
   // Health
   getHealth: () => apiRequest('/health'),
 };
+

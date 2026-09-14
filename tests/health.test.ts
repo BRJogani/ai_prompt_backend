@@ -48,7 +48,7 @@ describe('Root endpoint', () => {
   const app = createApp();
 
   it('returns basic API metadata', async () => {
-    const res = await request(app).get('/');
+    const res = await request(app).get('/').set('Accept', 'application/json');
 
     expect(res.status).toBe(200);
     expect(res.body.success).toBe(true);
