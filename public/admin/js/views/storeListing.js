@@ -68,7 +68,7 @@ Elevate your AI art and prompt engineering skills today. Download PromptAI and s
   contentRating: 'Everyone (Rated 3+)',
   developerEmail: 'support@aipromptapp.com',
   privacyPolicyUrl: 'https://aipromptapp.com/privacy',
-  appIconUrl: '/admin/assets/playstore/app-icon-512.jpg',
+  appIconUrl: '/admin/assets/playstore/app_icon_3.png',
   featureGraphicUrl: '/admin/assets/playstore/feature-graphic.jpg',
   screenshotsPhone: [
     {
@@ -588,7 +588,7 @@ export async function renderStoreListing(container) {
               <!-- Icon Preview Frame -->
               <div style="display: flex; flex-direction: column; align-items: center; gap: 12px;">
                 <div id="icon-preview-box" class="icon-squircle" style="width: 180px; height: 180px; overflow: hidden; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6), 0 0 20px rgba(99, 102, 241, 0.4); border: 1px solid rgba(255, 255, 255, 0.15); transition: border-radius 0.25s ease;">
-                  <img src="${listingData.appIconUrl}" id="img-app-icon-preview" alt="Play Store App Icon" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.src='/admin/assets/playstore/app-icon-512.jpg'" />
+                  <img src="${listingData.appIconUrl}" id="img-app-icon-preview" alt="Play Store App Icon" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.src='/admin/assets/playstore/app_icon_3.png'" />
                 </div>
                 <!-- Shape preview mask toggle -->
                 <div style="display: flex; gap: 6px; background: rgba(0,0,0,0.3); padding: 4px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.06);">
@@ -1060,7 +1060,7 @@ export async function renderStoreListing(container) {
             
             <!-- App Icon with Google Play Squircle -->
             <div style="width: 100px; height: 100px; border-radius: 22px; overflow: hidden; box-shadow: 0 8px 25px rgba(0,0,0,0.6); flex-shrink: 0; border: 1px solid rgba(255,255,255,0.15); background: #000;">
-              <img src="${listingData.appIconUrl}" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.src='/admin/assets/playstore/app-icon-512.jpg'" />
+              <img src="${listingData.appIconUrl}" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.src='/admin/assets/playstore/app_icon_3.png'" />
             </div>
 
             <!-- Title & Metadata -->
