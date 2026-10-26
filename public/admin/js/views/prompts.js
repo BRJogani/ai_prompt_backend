@@ -9,14 +9,27 @@ let state = {
   categories: [],
   tags: [],
   page: 1,
-  limit: 15,
+  limit: 20,
   total: 0,
   search: '',
   categoryId: '',
   status: '',
   isPremium: '',
   isFeatured: '',
+  viewMode: localStorage.getItem('prompts_view_mode') || 'list',
+  isLoadingMore: false,
+  hasMore: true,
 };
+
+function escapeHtml(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
 
 function getUncroppedImageUrl(m) {
   if (!m) return 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800';
@@ -116,12 +129,23 @@ export async function renderPrompts(container, router, options = {}) {
               <i data-lucide="x" style="width: 14px; height: 14px;"></i> Clear
             </button>
           ` : ''}
+
+          <!-- View Mode Toggle (List vs Grid) -->
+          <div style="display: inline-flex; border: 1px solid var(--border-color); border-radius: var(--radius-md); overflow: hidden; margin-left: auto;">
+            <button type="button" class="btn btn-sm ${state.viewMode === 'list' ? 'btn-primary' : 'btn-secondary'}" id="btn-view-list" title="Table List View" style="border-radius: 0; padding: 6px 12px; display: inline-flex; align-items: center; gap: 5px;">
+              <i data-lucide="list" style="width: 15px; height: 15px;"></i> List
+            </button>
+            <button type="button" class="btn btn-sm ${state.viewMode === 'grid' ? 'btn-primary' : 'btn-secondary'}" id="btn-view-grid" title="Cards Grid View" style="border-radius: 0; padding: 6px 12px; display: inline-flex; align-items: center; gap: 5px;">
+              <i data-lucide="grid" style="width: 15px; height: 15px;"></i> Grid
+            </button>
+          </div>
         </div>
       </div>
 
-      <!-- Data Table Card -->
+      <!-- Prompts Content Card -->
       <div class="card" style="padding: 0; overflow: hidden;">
-        <div class="table-responsive">
+        <!-- List View Table Container -->
+        <div class="table-responsive" id="prompts-table-container" style="${state.viewMode === 'grid' ? 'display: none;' : ''}">
           <table class="data-table" style="margin: 0;">
             <thead>
               <tr>
@@ -140,10 +164,17 @@ export async function renderPrompts(container, router, options = {}) {
           </table>
         </div>
 
-        <!-- Pagination -->
+        <!-- Cards Grid View Container -->
+        <div id="prompts-grid-container" class="prompts-grid" style="${state.viewMode === 'grid' ? '' : 'display: none;'}">
+          <div style="text-align: center; padding: 40px; color: var(--text-muted); grid-column: 1 / -1;">Loading prompt grid...</div>
+        </div>
+
+        <!-- Infinite Scroll Footer Status -->
         <div style="padding: 14px 20px; border-top: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; background: rgba(0,0,0,0.15);">
           <span style="font-size: 0.85rem; color: var(--text-muted);" id="prompts-count-label">Showing 0 prompts</span>
-          <div style="display: flex; gap: 8px;" id="prompts-pagination-buttons"></div>
+          <div id="prompts-scroll-loader" style="display: none; align-items: center; gap: 8px; color: var(--accent-cyan); font-size: 0.82rem; font-weight: 600;">
+            <i data-lucide="loader" style="width: 16px; height: 16px; animation: spin 1s linear infinite;"></i> Loading more prompts on scroll...
+          </div>
         </div>
       </div>
     </div>
@@ -220,6 +251,58 @@ export async function renderPrompts(container, router, options = {}) {
   container.querySelector('#btn-create-prompt')?.addEventListener('click', () => {
     router.navigate('prompt-editor');
   });
+
+  // Wire View Mode Switcher
+  container.querySelector('#btn-view-list')?.addEventListener('click', () => {
+    if (state.viewMode !== 'list') {
+      state.viewMode = 'list';
+      localStorage.setItem('prompts_view_mode', 'list');
+      const btnList = container.querySelector('#btn-view-list');
+      const btnGrid = container.querySelector('#btn-view-grid');
+      btnList?.classList.remove('btn-secondary');
+      btnList?.classList.add('btn-primary');
+      btnGrid?.classList.remove('btn-primary');
+      btnGrid?.classList.add('btn-secondary');
+      const tableWrap = container.querySelector('#prompts-table-container');
+      const gridWrap = container.querySelector('#prompts-grid-container');
+      if (tableWrap) tableWrap.style.display = '';
+      if (gridWrap) gridWrap.style.display = 'none';
+      if (window.lucide) window.lucide.createIcons();
+    }
+  });
+
+  container.querySelector('#btn-view-grid')?.addEventListener('click', () => {
+    if (state.viewMode !== 'grid') {
+      state.viewMode = 'grid';
+      localStorage.setItem('prompts_view_mode', 'grid');
+      const btnList = container.querySelector('#btn-view-list');
+      const btnGrid = container.querySelector('#btn-view-grid');
+      btnGrid?.classList.remove('btn-secondary');
+      btnGrid?.classList.add('btn-primary');
+      btnList?.classList.remove('btn-primary');
+      btnList?.classList.add('btn-secondary');
+      const tableWrap = container.querySelector('#prompts-table-container');
+      const gridWrap = container.querySelector('#prompts-grid-container');
+      if (tableWrap) tableWrap.style.display = 'none';
+      if (gridWrap) gridWrap.style.display = 'grid';
+      if (window.lucide) window.lucide.createIcons();
+    }
+  });
+
+  // Attach infinite scroll loading on scroll
+  const handleScroll = () => {
+    if (state.isLoadingMore || !state.hasMore) return;
+    const scrollPosition = window.innerHeight + window.scrollY;
+    const threshold = document.documentElement.scrollHeight - 380;
+    if (scrollPosition >= threshold) {
+      loadMorePrompts(container, router);
+    }
+  };
+  if (window.__promptsScrollHandler) {
+    window.removeEventListener('scroll', window.__promptsScrollHandler);
+  }
+  window.__promptsScrollHandler = handleScroll;
+  window.addEventListener('scroll', handleScroll, { passive: true });
 }
 
 async function loadAuxData(container) {
@@ -475,9 +558,173 @@ async function openSelectImageToPinModal(container, router) {
   }
 }
 
-async function fetchPrompts(container, router) {
+async function loadMorePrompts(container, router) {
+  if (state.isLoadingMore || !state.hasMore) return;
+  state.isLoadingMore = true;
+  state.page += 1;
+  const loader = container.querySelector('#prompts-scroll-loader');
+  if (loader) {
+    loader.style.display = 'inline-flex';
+    if (window.lucide) window.lucide.createIcons();
+  }
+
+  try {
+    await fetchPrompts(container, router, true);
+  } catch (err) {
+    state.page -= 1;
+  } finally {
+    state.isLoadingMore = false;
+    if (loader) loader.style.display = 'none';
+  }
+}
+
+function renderPromptRowHtml(p) {
+  const thumbUrl = p.media && p.media.length ? getUncroppedImageUrl(p.media[0]) : 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800';
+  const trendingScore = (p.trendingScore != null && typeof p.trendingScore === 'number') ? p.trendingScore.toFixed(1) : '0.0';
+  const copyCount = p.copyCount ?? 0;
+  const viewCount = p.viewCount ?? 0;
+  const favoriteCount = p.favoriteCount ?? 0;
+  const safeTitle = (p.title || '').replace(/"/g, '&quot;');
+  const isPinned = state.pinnedIds.includes(p.id);
+  const pinRank = isPinned ? state.pinnedIds.indexOf(p.id) + 1 : 0;
+  const isPublished = p.status === 'PUBLISHED';
+
+  return `
+    <tr data-id="${p.id}">
+      <td>
+        <img src="${thumbUrl}" class="thumbnail-preview prompt-thumbnail-click" alt="${safeTitle}" data-full-url="${thumbUrl}" data-title="${safeTitle}" title="Click to view full uncropped image" onerror="this.src='https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=100'" />
+      </td>
+      <td>
+        <div style="font-weight: 600; color: #f8fafc; font-size: 0.95rem; line-height: 1.4; max-width: 440px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;" title="${safeTitle}">
+          ${p.isPremium ? '<span style="color: #fbbf24; margin-right: 4px;" title="Premium Prompt">★</span>' : ''}${p.title || 'Untitled Prompt'}
+        </div>
+        <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 2px;">${p.category ? p.category.name : 'Uncategorized'} &bull; /${p.slug}</div>
+      </td>
+      <td>
+        <div style="display: flex; gap: 4px; flex-wrap: wrap;">
+          <span class="badge badge-cyan">${p.contentType || 'IMAGE'}</span>
+          ${isPinned ? `<span class="badge" style="background: rgba(245, 158, 11, 0.25); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.5); font-weight: 700;">📌 Top #${pinRank}</span>` : ''}
+          ${(p.isFeatured || (p.sortOrder && p.sortOrder > 0)) && !isPinned ? `<span class="badge" style="background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.4); font-weight: 700;">⭐ Priority ${p.sortOrder > 0 ? '#' + p.sortOrder : ''}</span>` : ''}
+          ${p.isPremium ? '<span class="badge" style="background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.4); font-weight: 700;">PREMIUM</span>' : ''}
+        </div>
+      </td>
+      <td>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <label class="switch switch-sm" title="Toggle Published / Draft">
+            <input type="checkbox" class="prompt-status-toggle" data-id="${p.id}" ${isPublished ? 'checked' : ''}>
+            <span class="slider"></span>
+          </label>
+          <span class="badge ${isPublished ? 'badge-success' : p.status === 'DRAFT' ? 'badge-secondary' : 'badge-warning'}" id="prompt-badge-${p.id}">
+            ${p.status || 'DRAFT'}
+          </span>
+        </div>
+      </td>
+      <td>
+        <div style="display: flex; gap: 8px; align-items: center; font-size: 0.8rem;">
+          <span class="badge badge-purple" style="font-size: 0.72rem; font-weight: 600;">📋 ${copyCount} copies</span>
+          <span style="color: var(--text-muted); font-size: 0.76rem;">👁️ ${viewCount} &bull; ❤️ ${favoriteCount}</span>
+        </div>
+      </td>
+      <td>
+        <span style="font-size: 0.84rem; font-weight: 600; color: ${p.isTrending ? '#34d399' : 'var(--text-muted)'};">
+          ${trendingScore} ${p.isTrending ? '🔥' : ''}
+        </span>
+      </td>
+      <td style="text-align: right;">
+        <div style="display: inline-flex; gap: 6px; align-items: center;">
+          <button class="btn btn-sm toggle-pin-action-btn ${isPinned ? 'btn-warning' : 'btn-secondary'}" data-id="${p.id}" title="${isPinned ? 'Currently Top #' + pinRank + ' of feed. Click to unpin.' : 'Pin this image to show at the very top of the feed'}" style="font-size: 0.76rem; font-weight: 600; padding: 3px 8px;">
+            ${isPinned ? '⭐ #' + pinRank : '📌 Pin'}
+          </button>
+          <button class="btn btn-secondary btn-sm edit-prompt-btn" data-id="${p.id}" title="Edit Full-Screen">
+            <i data-lucide="edit-3" style="width: 14px; height: 14px;"></i>
+          </button>
+          <button class="btn btn-danger btn-sm delete-prompt-btn" data-id="${p.id}" title="Delete Prompt">
+            <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i>
+          </button>
+        </div>
+      </td>
+    </tr>
+  `;
+}
+
+function renderPromptGridCardHtml(p) {
+  const thumbUrl = p.media && p.media.length ? getUncroppedImageUrl(p.media[0]) : 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800';
+  const trendingScore = (p.trendingScore != null && typeof p.trendingScore === 'number') ? p.trendingScore.toFixed(1) : '0.0';
+  const copyCount = p.copyCount ?? 0;
+  const viewCount = p.viewCount ?? 0;
+  const favoriteCount = p.favoriteCount ?? 0;
+  const safeTitle = (p.title || '').replace(/"/g, '&quot;');
+  const isPinned = state.pinnedIds.includes(p.id);
+  const pinRank = isPinned ? state.pinnedIds.indexOf(p.id) + 1 : 0;
+  const isPublished = p.status === 'PUBLISHED';
+  const promptSnippet = escapeHtml(p.promptText || p.title || 'No prompt script entered');
+
+  return `
+    <div class="prompt-grid-item" data-id="${p.id}">
+      <div class="prompt-grid-thumb">
+        <img src="${thumbUrl}" class="prompt-thumbnail-click" alt="${safeTitle}" data-full-url="${thumbUrl}" data-title="${safeTitle}" title="Click to view full image" onerror="this.src='https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=400'" />
+        <div style="position: absolute; top: 8px; left: 8px; display: flex; flex-wrap: wrap; gap: 4px;">
+          <span class="badge badge-cyan" style="font-size: 0.68rem; padding: 2px 6px;">${p.contentType || 'IMAGE'}</span>
+          ${isPinned ? `<span class="badge" style="background: rgba(245, 158, 11, 0.9); color: #000; font-weight: 800; font-size: 0.68rem; padding: 2px 6px;">📌 Top #${pinRank}</span>` : ''}
+          ${(p.isFeatured || (p.sortOrder && p.sortOrder > 0)) && !isPinned ? `<span class="badge" style="background: #f59e0b; color: #000; font-weight: 700; font-size: 0.68rem; padding: 2px 6px;">⭐ Priority</span>` : ''}
+          ${p.isPremium ? '<span class="badge" style="background: #fbbf24; color: #000; font-weight: 800; font-size: 0.68rem; padding: 2px 6px;">PRO</span>' : ''}
+        </div>
+        <div style="position: absolute; top: 8px; right: 8px; background: rgba(0,0,0,0.7); padding: 3px 6px; border-radius: 20px; display: flex; align-items: center; gap: 6px;">
+          <label class="switch switch-sm" title="Toggle Published / Draft">
+            <input type="checkbox" class="prompt-status-toggle" data-id="${p.id}" ${isPublished ? 'checked' : ''}>
+            <span class="slider"></span>
+          </label>
+          <span class="badge ${isPublished ? 'badge-success' : 'badge-secondary'}" id="prompt-grid-badge-${p.id}" style="font-size: 0.66rem; padding: 2px 5px;">
+            ${p.status || 'DRAFT'}
+          </span>
+        </div>
+      </div>
+      <div class="prompt-grid-body">
+        <div>
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 4px;">
+            <span style="font-size: 0.74rem; color: var(--accent-cyan); font-weight: 600;">${p.category ? p.category.name : 'Uncategorized'}</span>
+            <span style="font-size: 0.74rem; color: ${p.isTrending ? '#34d399' : 'var(--text-muted)'}; font-weight: 600;">${trendingScore} ${p.isTrending ? '🔥' : ''}</span>
+          </div>
+          <div style="font-size: 0.88rem; font-weight: 600; color: #f8fafc; line-height: 1.35; margin-bottom: 6px; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden;" title="${safeTitle}">
+            ${p.isPremium ? '<span style="color: #fbbf24; margin-right: 3px;">★</span>' : ''}${p.title || 'Untitled'}
+          </div>
+          <p class="prompt-grid-text" title="${promptSnippet}">
+            ${promptSnippet}
+          </p>
+        </div>
+        <div>
+          <div style="display: flex; gap: 8px; align-items: center; font-size: 0.74rem; color: var(--text-muted); margin-bottom: 8px;">
+            <span class="badge badge-purple" style="font-size: 0.68rem;">📋 ${copyCount} copies</span>
+            <span>👁️ ${viewCount}</span>
+            <span>❤️ ${favoriteCount}</span>
+          </div>
+          <div class="prompt-grid-footer">
+            <button class="btn btn-sm toggle-pin-action-btn ${isPinned ? 'btn-warning' : 'btn-secondary'}" data-id="${p.id}" title="${isPinned ? 'Currently Top #' + pinRank + '. Click to unpin.' : 'Pin this image to show at top'}" style="font-size: 0.74rem; font-weight: 600; padding: 3px 8px;">
+              ${isPinned ? '⭐ Top #' + pinRank : '📌 Pin'}
+            </button>
+            <div style="display: inline-flex; gap: 6px;">
+              <button class="btn btn-secondary btn-sm edit-prompt-btn" data-id="${p.id}" title="Edit Full-Screen" style="padding: 3px 7px;">
+                <i data-lucide="edit-3" style="width: 14px; height: 14px;"></i>
+              </button>
+              <button class="btn btn-danger btn-sm delete-prompt-btn" data-id="${p.id}" title="Delete Prompt" style="padding: 3px 7px;">
+                <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+async function fetchPrompts(container, router, append = false) {
   const tbody = container.querySelector('#prompts-table-body');
   if (!tbody) return;
+
+  if (!append) {
+    state.page = 1;
+    state.hasMore = true;
+  }
 
   try {
     const params = {
@@ -491,173 +738,147 @@ async function fetchPrompts(container, router) {
     };
 
     const res = await api.getPrompts(params);
-    state.prompts = res.data || [];
-    state.total = res.pagination ? res.pagination.total : state.prompts.length;
+    const newItems = res.data || [];
+    state.total = res.pagination ? res.pagination.total : newItems.length;
+
+    if (append) {
+      state.prompts = [...state.prompts, ...newItems];
+    } else {
+      state.prompts = newItems;
+    }
+
+    state.hasMore = state.prompts.length < state.total && newItems.length > 0;
+
+    const gridContainer = container.querySelector('#prompts-grid-container');
 
     if (!state.prompts.length) {
       tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 48px; color: var(--text-muted);">No prompts found matching the criteria.</td></tr>`;
+      if (gridContainer) {
+        gridContainer.innerHTML = `<div style="text-align: center; padding: 48px; color: var(--text-muted); grid-column: 1 / -1;">No prompts found matching the criteria.</div>`;
+      }
       container.querySelector('#prompts-count-label').textContent = 'Showing 0 prompts';
-      container.querySelector('#prompts-pagination-buttons').innerHTML = '';
       return;
     }
 
-    tbody.innerHTML = state.prompts
-      .map((p) => {
-        const thumbUrl = p.media && p.media.length ? getUncroppedImageUrl(p.media[0]) : 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800';
-        const trendingScore = (p.trendingScore != null && typeof p.trendingScore === 'number') ? p.trendingScore.toFixed(1) : '0.0';
-        const copyCount = p.copyCount ?? 0;
-        const viewCount = p.viewCount ?? 0;
-        const favoriteCount = p.favoriteCount ?? 0;
-        const safeTitle = (p.title || '').replace(/"/g, '&quot;');
-        const isPinned = state.pinnedIds.includes(p.id);
-        const pinRank = isPinned ? state.pinnedIds.indexOf(p.id) + 1 : 0;
+    if (append) {
+      const rowsHtml = newItems.map((p) => renderPromptRowHtml(p)).join('');
+      tbody.insertAdjacentHTML('beforeend', rowsHtml);
 
-        return `
-          <tr>
-            <td>
-              <img src="${thumbUrl}" class="thumbnail-preview prompt-thumbnail-click" alt="${safeTitle}" data-full-url="${thumbUrl}" data-title="${safeTitle}" title="Click to view full uncropped image" onerror="this.src='https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=100'" />
-            </td>
-            <td>
-              <div style="font-weight: 600; color: #f8fafc; font-size: 0.95rem; line-height: 1.4; max-width: 440px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;" title="${safeTitle}">
-                ${p.isPremium ? '<span style="color: #fbbf24; margin-right: 4px;" title="Premium Prompt">★</span>' : ''}${p.title || 'Untitled Prompt'}
-              </div>
-              <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 2px;">${p.category ? p.category.name : 'Uncategorized'} &bull; /${p.slug}</div>
-            </td>
-            <td>
-              <div style="display: flex; gap: 4px; flex-wrap: wrap;">
-                <span class="badge badge-cyan">${p.contentType || 'IMAGE'}</span>
-                ${isPinned ? `<span class="badge" style="background: rgba(245, 158, 11, 0.25); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.5); font-weight: 700;">📌 Top #${pinRank}</span>` : ''}
-                ${(p.isFeatured || (p.sortOrder && p.sortOrder > 0)) && !isPinned ? `<span class="badge" style="background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.4); font-weight: 700;">⭐ Priority ${p.sortOrder > 0 ? '#' + p.sortOrder : ''}</span>` : ''}
-                ${p.isPremium ? '<span class="badge" style="background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.4); font-weight: 700;">PREMIUM</span>' : ''}
-              </div>
-            </td>
-            <td>
-              <span class="badge ${p.status === 'PUBLISHED' ? 'badge-success' : p.status === 'DRAFT' ? 'badge-secondary' : 'badge-warning'}">
-                ${p.status || 'DRAFT'}
-              </span>
-            </td>
-            <td>
-              <div style="display: flex; gap: 8px; align-items: center; font-size: 0.8rem;">
-                <span class="badge badge-purple" style="font-size: 0.72rem; font-weight: 600;">📋 ${copyCount} copies</span>
-                <span style="color: var(--text-muted); font-size: 0.76rem;">👁️ ${viewCount} &bull; ❤️ ${favoriteCount}</span>
-              </div>
-            </td>
-            <td>
-              <span style="font-size: 0.84rem; font-weight: 600; color: ${p.isTrending ? '#34d399' : 'var(--text-muted)'};">
-                ${trendingScore} ${p.isTrending ? '🔥' : ''}
-              </span>
-            </td>
-            <td style="text-align: right;">
-              <div style="display: inline-flex; gap: 6px; align-items: center;">
-                <button class="btn btn-sm toggle-pin-action-btn ${isPinned ? 'btn-warning' : 'btn-secondary'}" data-id="${p.id}" title="${isPinned ? 'Currently Top #' + pinRank + ' of feed. Click to unpin.' : 'Pin this image to show at the very top of the feed'}" style="font-size: 0.76rem; font-weight: 600; padding: 3px 8px;">
-                  ${isPinned ? '⭐ #' + pinRank : '📌 Pin'}
-                </button>
-                <button class="btn btn-secondary btn-sm edit-prompt-btn" data-id="${p.id}" title="Edit Full-Screen">
-                  <i data-lucide="edit-3" style="width: 14px; height: 14px;"></i>
-                </button>
-                <button class="btn btn-danger btn-sm delete-prompt-btn" data-id="${p.id}" title="Delete Prompt">
-                  <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i>
-                </button>
-              </div>
-            </td>
-          </tr>
-        `;
-      })
-      .join('');
+      if (gridContainer) {
+        const gridHtml = newItems.map((p) => renderPromptGridCardHtml(p)).join('');
+        gridContainer.insertAdjacentHTML('beforeend', gridHtml);
+      }
+    } else {
+      tbody.innerHTML = state.prompts.map((p) => renderPromptRowHtml(p)).join('');
+
+      if (gridContainer) {
+        gridContainer.innerHTML = state.prompts.map((p) => renderPromptGridCardHtml(p)).join('');
+      }
+    }
 
     if (window.lucide) window.lucide.createIcons();
 
-    // Render count label & pagination
-    container.querySelector('#prompts-count-label').textContent = `Showing ${(state.page - 1) * state.limit + 1} - ${Math.min(state.page * state.limit, state.total)} of ${state.total} prompts`;
-    renderPagination(container, router);
+    // Render count status
+    const countLabel = container.querySelector('#prompts-count-label');
+    if (countLabel) {
+      countLabel.textContent = `Showing ${state.prompts.length} of ${state.total} prompts${!state.hasMore && state.total > 0 ? ' • All loaded' : ' • Scroll for more'}`;
+    }
 
-    // Bind thumbnail lightbox click
-    tbody.querySelectorAll('.prompt-thumbnail-click').forEach((img) => {
-      img.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const url = img.getAttribute('data-full-url');
-        const title = img.getAttribute('data-title') || 'Prompt Preview';
-        if (url) modal.imageLightbox(url, title);
-      });
-    });
-
-    // Bind pin toggle buttons in table rows
-    tbody.querySelectorAll('.toggle-pin-action-btn').forEach((btn) => {
-      btn.addEventListener('click', async (e) => {
-        e.stopPropagation();
-        const id = btn.getAttribute('data-id');
-        try {
-          const toggleRes = await api.toggleTopPinnedPrompt(id);
-          toast.success(toggleRes.message || 'Updated top pinned prompt');
-          await Promise.all([fetchTopPinnedPrompts(container, router), fetchPrompts(container, router)]);
-        } catch (err) {
-          toast.error(err.message || 'Failed to update pinned status');
-        }
-      });
-    });
-
-    // Bind row action buttons
-    tbody.querySelectorAll('.edit-prompt-btn').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const id = btn.getAttribute('data-id');
-        router.navigate('prompt-editor', { promptId: id });
-      });
-    });
-
-    tbody.querySelectorAll('.delete-prompt-btn').forEach((btn) => {
-      btn.addEventListener('click', async () => {
-        const id = btn.getAttribute('data-id');
-        const prompt = state.prompts.find((p) => p.id === id);
-        modal.confirm({
-          title: 'Delete Prompt',
-          message: `Are you sure you want to delete prompt "<strong>${prompt ? prompt.title : ''}</strong>"? This action cannot be undone.`,
-          confirmText: 'Delete Prompt',
-          confirmType: 'danger',
-          onConfirm: async () => {
-            try {
-              await api.deletePrompt(id);
-              toast.success('Prompt deleted successfully');
-              await Promise.all([fetchTopPinnedPrompts(container, router), fetchPrompts(container, router)]);
-            } catch (err) {
-              toast.error(err.message || 'Failed to delete prompt');
-              throw err;
-            }
-          },
-        });
-      });
-    });
+    // Bind event handlers on container
+    bindPromptActionListeners(container, router);
   } catch (err) {
     toast.error('Failed to load prompts');
   }
 }
 
-function renderPagination(container, router) {
-  const paginationDiv = container.querySelector('#prompts-pagination-buttons');
-  if (!paginationDiv) return;
+function bindPromptActionListeners(container, router) {
+  // Bind status switch toggles
+  container.querySelectorAll('.prompt-status-toggle').forEach((toggle) => {
+    toggle.onchange = async () => {
+      const id = toggle.getAttribute('data-id');
+      const isChecked = toggle.checked;
+      const nextStatus = isChecked ? 'PUBLISHED' : 'DRAFT';
+      try {
+        await api.updatePrompt(id, { status: nextStatus });
+        toast.success(`Prompt status set to ${nextStatus}`);
 
-  const totalPages = Math.ceil(state.total / state.limit) || 1;
-  if (totalPages <= 1) {
-    paginationDiv.innerHTML = '';
-    return;
-  }
+        const listBadge = container.querySelector(`#prompt-badge-${id}`);
+        if (listBadge) {
+          listBadge.className = `badge ${isChecked ? 'badge-success' : 'badge-secondary'}`;
+          listBadge.textContent = nextStatus;
+        }
+        const gridBadge = container.querySelector(`#prompt-grid-badge-${id}`);
+        if (gridBadge) {
+          gridBadge.className = `badge ${isChecked ? 'badge-success' : 'badge-secondary'}`;
+          gridBadge.textContent = nextStatus;
+        }
+        container.querySelectorAll(`.prompt-status-toggle[data-id="${id}"]`).forEach((t) => {
+          t.checked = isChecked;
+        });
 
-  paginationDiv.innerHTML = `
-    <button class="btn btn-secondary btn-sm" id="prev-page-btn" ${state.page <= 1 ? 'disabled' : ''}>Previous</button>
-    <span style="font-size: 0.82rem; align-self: center; color: var(--text-muted); padding: 0 6px;">Page ${state.page} of ${totalPages}</span>
-    <button class="btn btn-secondary btn-sm" id="next-page-btn" ${state.page >= totalPages ? 'disabled' : ''}>Next</button>
-  `;
-
-  paginationDiv.querySelector('#prev-page-btn')?.addEventListener('click', () => {
-    if (state.page > 1) {
-      state.page -= 1;
-      fetchPrompts(container, router);
-    }
+        const p = state.prompts.find((pr) => pr.id === id);
+        if (p) p.status = nextStatus;
+      } catch (err) {
+        toggle.checked = !isChecked;
+        toast.error(err.message || 'Failed to update prompt status');
+      }
+    };
   });
 
-  paginationDiv.querySelector('#next-page-btn')?.addEventListener('click', () => {
-    if (state.page < totalPages) {
-      state.page += 1;
-      fetchPrompts(container, router);
-    }
+  // Bind thumbnail lightbox click
+  container.querySelectorAll('.prompt-thumbnail-click').forEach((img) => {
+    img.onclick = (e) => {
+      e.stopPropagation();
+      const url = img.getAttribute('data-full-url');
+      const title = img.getAttribute('data-title') || 'Prompt Preview';
+      if (url) modal.imageLightbox(url, title);
+    };
+  });
+
+  // Bind pin toggle buttons
+  container.querySelectorAll('.toggle-pin-action-btn').forEach((btn) => {
+    btn.onclick = async (e) => {
+      e.stopPropagation();
+      const id = btn.getAttribute('data-id');
+      try {
+        const toggleRes = await api.toggleTopPinnedPrompt(id);
+        toast.success(toggleRes.message || 'Updated top pinned prompt');
+        await Promise.all([fetchTopPinnedPrompts(container, router), fetchPrompts(container, router)]);
+      } catch (err) {
+        toast.error(err.message || 'Failed to update pinned status');
+      }
+    };
+  });
+
+  // Bind edit buttons
+  container.querySelectorAll('.edit-prompt-btn').forEach((btn) => {
+    btn.onclick = () => {
+      const id = btn.getAttribute('data-id');
+      router.navigate('prompt-editor', { promptId: id });
+    };
+  });
+
+  // Bind delete buttons
+  container.querySelectorAll('.delete-prompt-btn').forEach((btn) => {
+    btn.onclick = () => {
+      const id = btn.getAttribute('data-id');
+      const prompt = state.prompts.find((p) => p.id === id);
+      modal.confirm({
+        title: 'Delete Prompt',
+        message: `Are you sure you want to delete prompt "<strong>${prompt ? prompt.title : ''}</strong>"? This action cannot be undone.`,
+        confirmText: 'Delete Prompt',
+        confirmType: 'danger',
+        onConfirm: async () => {
+          try {
+            await api.deletePrompt(id);
+            toast.success('Prompt deleted successfully');
+            await Promise.all([fetchTopPinnedPrompts(container, router), fetchPrompts(container, router)]);
+          } catch (err) {
+            toast.error(err.message || 'Failed to delete prompt');
+            throw err;
+          }
+        },
+      });
+    };
   });
 }

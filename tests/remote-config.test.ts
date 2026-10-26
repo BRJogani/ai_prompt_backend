@@ -175,6 +175,50 @@ describe('PATCH /api/v1/admin/app-config/:key', () => {
 
     expect(res.status).toBe(404);
   });
+
+  it('successfully updates playstore_listing_data with large JSON configuration (> 5000 chars)', async () => {
+    const largePlayStoreData = {
+      appName: 'Viral AI Prompt: Curated Art & Video',
+      shortDescription: 'Explore, copy & test 10,000+ top prompts for Midjourney, DALL-E, Sora & AI art.',
+      longDescription: 'A'.repeat(3800), // Large description close to Google Play 4,000 char limit
+      category: 'Art & Design',
+      secondaryCategory: 'Productivity',
+      contentRating: 'Everyone',
+      developerEmail: 'support@example.com',
+      privacyPolicyUrl: 'https://example.com/privacy',
+      appIconUrl: '/admin/assets/playstore/app_icon_3.png',
+      featureGraphicUrl: '/admin/assets/playstore/feature-graphic.jpg',
+      screenshotsPhone: Array.from({ length: 6 }, (_, i) => ({
+        id: `p${i + 1}`,
+        title: `Screenshot ${i + 1}`,
+        subtitle: 'Detailed AI prompt mockup with parameters',
+        promptText: 'Cinematic wide shot of neon cyberpunk metropolis '.repeat(10),
+      })),
+    };
+    const jsonString = JSON.stringify(largePlayStoreData);
+    expect(jsonString.length).toBeGreaterThan(5000);
+
+    const res = await request(app)
+      .patch('/api/v1/admin/app-config/playstore_listing_data')
+      .set('Authorization', `Bearer ${accessToken}`)
+      .send({ value: jsonString });
+
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+    expect(res.body.data.key).toBe('playstore_listing_data');
+    expect(res.body.data.valueType).toBe('json');
+    expect(res.body.data.value).toBe(jsonString);
+
+    // Verify it can be read back
+    const getRes = await request(app)
+      .get('/api/v1/admin/app-config/playstore_listing_data')
+      .set('Authorization', `Bearer ${accessToken}`);
+
+    expect(getRes.status).toBe(200);
+    const parsed = JSON.parse(getRes.body.data.value);
+    expect(parsed.appName).toBe('Viral AI Prompt: Curated Art & Video');
+    expect(parsed.screenshotsPhone).toHaveLength(6);
+  });
 });
 
 describe('PUT /api/v1/admin/app-version/:platform', () => {

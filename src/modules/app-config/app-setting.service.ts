@@ -43,13 +43,13 @@ export const appSettingService = {
   async update(key: string, value: string, adminId: string, ipAddress?: string) {
     const existing = await appSettingRepository.findByKey(key);
     const autoCreatedKeys = ['shuffle_enabled', 'daily_shuffle_enabled', 'shuffle_interval', 'daily_shuffle_salt', 'top_pinned_prompt_ids'];
-    if (!existing && !autoCreatedKeys.includes(key) && !key.startsWith('playstore_')) {
+    if (!existing && !autoCreatedKeys.includes(key) && !key.startsWith('playstore_') && !key.startsWith('iap_')) {
       throw new NotFoundError(`Setting "${key}" not found`);
     }
     const updated = await appSettingRepository.upsert(key, {
       value,
-      valueType: existing?.valueType ?? (value === 'true' || value === 'false' ? 'boolean' : 'string'),
-      description: existing?.description ?? (key === 'daily_shuffle_enabled' ? 'Master toggle for daily synchronized prompt shuffling across all devices.' : key === 'daily_shuffle_salt' ? 'Dynamic seed salt for daily prompt shuffling.' : undefined),
+      valueType: existing?.valueType ?? (value === 'true' || value === 'false' ? 'boolean' : key.includes('json') || key.includes('data') || value.startsWith('{') || value.startsWith('[') ? 'json' : 'string'),
+      description: existing?.description ?? (key === 'playstore_listing_data' ? 'Google Play Store listing metadata, descriptions, graphics, and screenshots config.' : key === 'daily_shuffle_enabled' ? 'Master toggle for daily synchronized prompt shuffling across all devices.' : key === 'daily_shuffle_salt' ? 'Dynamic seed salt for daily prompt shuffling.' : undefined),
     });
 
     if (key.includes('shuffle') || key.includes('top_pinned')) {
@@ -66,7 +66,10 @@ export const appSettingService = {
       action: AUDIT_ACTIONS.UPDATE_APP_CONFIG,
       entityType: 'AppSetting',
       entityId: key,
-      metadata: { value, created: !existing },
+      metadata: {
+        value: value.length > 1000 ? `${value.substring(0, 1000)}... [length: ${value.length}]` : value,
+        created: !existing,
+      },
       ipAddress,
     });
 
@@ -188,6 +191,15 @@ export const appSettingService = {
       // reflects only the master kill switch until the AdConfig table exists.
       ads: {
         enabled: getBool('ads_enabled', false),
+      },
+      purchase: {
+        sku: get('iap_sku', 'ai_prompt'),
+        price: parseFloat(get('iap_price', '4.99')) || 4.99,
+        originalPrice: parseFloat(get('iap_original_price', '9.99')) || 9.99,
+        discount: get('iap_discount', '50% OFF'),
+        currency: get('iap_currency', 'USD'),
+        title: get('iap_title', 'Viral AI Prompt Pro Lifetime'),
+        enabled: getBool('iap_enabled', true),
       },
     };
   },

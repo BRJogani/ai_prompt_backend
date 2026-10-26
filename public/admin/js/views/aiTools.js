@@ -96,9 +96,15 @@ async function fetchTools(container) {
             </div>
           </td>
           <td>
-            <span class="badge ${t.status === 'ACTIVE' ? 'badge-success' : 'badge-danger'}">
-              ${t.status || 'ACTIVE'}
-            </span>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <label class="switch switch-sm" title="Toggle AI Tool Status">
+                <input type="checkbox" class="tool-status-toggle" data-id="${t.id}" ${(t.status || 'ACTIVE') === 'ACTIVE' ? 'checked' : ''}>
+                <span class="slider"></span>
+              </label>
+              <span class="badge ${(t.status || 'ACTIVE') === 'ACTIVE' ? 'badge-success' : 'badge-danger'}" id="tool-badge-${t.id}">
+                ${t.status || 'ACTIVE'}
+              </span>
+            </div>
           </td>
           <td style="text-align: right;">
             <div style="display: inline-flex; gap: 6px;">
@@ -115,6 +121,29 @@ async function fetchTools(container) {
       .join('');
 
     if (window.lucide) window.lucide.createIcons();
+
+    // Wire status on/off switch
+    tbody.querySelectorAll('.tool-status-toggle').forEach((toggle) => {
+      toggle.addEventListener('change', async () => {
+        const id = toggle.getAttribute('data-id');
+        const isChecked = toggle.checked;
+        const nextStatus = isChecked ? 'ACTIVE' : 'INACTIVE';
+        try {
+          await api.updateAiTool(id, { status: nextStatus });
+          toast.success(`AI tool status updated to ${nextStatus}`);
+          const badge = tbody.querySelector(`#tool-badge-${id}`);
+          if (badge) {
+            badge.className = `badge ${isChecked ? 'badge-success' : 'badge-danger'}`;
+            badge.textContent = nextStatus;
+          }
+          const tool = tools.find((t) => t.id === id);
+          if (tool) tool.status = nextStatus;
+        } catch (err) {
+          toggle.checked = !isChecked;
+          toast.error(err.message || 'Failed to update tool status');
+        }
+      });
+    });
 
     tbody.querySelectorAll('.edit-tool-btn').forEach((btn) => {
       btn.addEventListener('click', () => {

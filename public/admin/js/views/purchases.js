@@ -55,6 +55,123 @@ export async function renderPurchases(container, _app) {
       </div>
     </div>
 
+    <!-- IAP & Discount Offer Configuration Card -->
+    <div class="card" style="margin-bottom: 24px; border: 1px solid rgba(245, 158, 11, 0.35); background: linear-gradient(135deg, rgba(30, 27, 75, 0.5) 0%, rgba(15, 23, 42, 0.7) 100%);">
+      <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; border-bottom: 1px solid rgba(245, 158, 11, 0.15); padding-bottom: 14px;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <span style="display: inline-flex; padding: 6px; border-radius: 8px; background: rgba(245, 158, 11, 0.18); color: #f59e0b;">
+            <i data-lucide="tag" style="width: 18px; height: 18px;"></i>
+          </span>
+          <div>
+            <div style="font-size: 1.05rem; font-weight: 700; color: #fff;">In-App Purchase & Discount Offer Configuration</div>
+            <div style="font-size: 0.78rem; color: #94a3b8;">Set active Google Play product SKU, offer price, original price, and promotional discount badge delivered to apps in real-time.</div>
+          </div>
+        </div>
+        <button id="save-iap-settings-btn" class="btn btn-primary btn-sm" style="background: #f59e0b; border-color: #d97706; color: #000; font-weight: 700;">
+          <i data-lucide="check" style="width: 15px; height: 15px;"></i> Save Purchase Settings
+        </button>
+      </div>
+
+      <div class="card-body" style="padding-top: 18px;">
+        <!-- Live Mobile Preview Banner -->
+        <div style="margin-bottom: 20px; padding: 14px 18px; border-radius: 12px; background: rgba(0, 0, 0, 0.35); border: 1px dashed rgba(245, 158, 11, 0.3); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <span style="font-size: 0.75rem; text-transform: uppercase; font-weight: 700; color: #94a3b8; letter-spacing: 0.5px;">Live App Preview:</span>
+            <div style="display: inline-flex; align-items: center; gap: 8px; background: rgba(255, 179, 0, 0.12); border: 1px solid rgba(255, 179, 0, 0.3); padding: 6px 14px; border-radius: 999px;">
+              <span style="color: #ffb300; font-weight: 800; font-size: 0.92rem;" id="preview-iap-title">Unlock Lifetime Pro</span>
+              <span style="color: #cbd5e1; font-weight: 700; font-size: 0.92rem;">&bull;</span>
+              <span style="color: #fff; font-weight: 800; font-size: 1rem;" id="preview-iap-price">$4.99</span>
+              <span style="color: #64748b; text-decoration: line-through; font-size: 0.85rem;" id="preview-iap-original-price">$9.99</span>
+              <span id="preview-iap-discount" class="badge" style="background: #ffb300; color: #000; font-weight: 800; font-size: 0.72rem; padding: 2px 7px; border-radius: 4px;">50% OFF</span>
+            </div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 0.78rem; color: #94a3b8;">Status:</span>
+            <span id="preview-iap-status" class="badge badge-success">ACTIVE</span>
+          </div>
+        </div>
+
+        <!-- Form Grid -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px;">
+          <div>
+            <label style="font-size: 0.78rem; font-weight: 600; color: #cbd5e1; display: block; margin-bottom: 6px;">
+              Google Play Product SKU
+            </label>
+            <input type="text" id="iap-input-sku" class="input" style="width: 100%; font-family: monospace;" value="ai_prompt" placeholder="e.g. ai_prompt" />
+            <div style="font-size: 0.72rem; color: #64748b; margin-top: 4px;">Must match Google Play Console In-App Product ID</div>
+          </div>
+
+          <div>
+            <label style="font-size: 0.78rem; font-weight: 600; color: #cbd5e1; display: block; margin-bottom: 6px;">
+              Current Offer Price ($)
+            </label>
+            <input type="number" step="0.01" id="iap-input-price" class="input" style="width: 100%;" value="4.99" placeholder="4.99" />
+            <div style="font-size: 0.72rem; color: #64748b; margin-top: 4px;">Discounted price displayed to customers</div>
+          </div>
+
+          <div>
+            <label style="font-size: 0.78rem; font-weight: 600; color: #cbd5e1; display: block; margin-bottom: 6px;">
+              Original Strikethrough Price ($)
+            </label>
+            <input type="number" step="0.01" id="iap-input-original-price" class="input" style="width: 100%;" value="9.99" placeholder="9.99" />
+            <div style="font-size: 0.72rem; color: #64748b; margin-top: 4px;">Crossed out price showing value savings</div>
+          </div>
+
+          <div>
+            <label style="font-size: 0.78rem; font-weight: 600; color: #cbd5e1; display: block; margin-bottom: 6px;">
+              Discount Offer Badge Text
+            </label>
+            <input type="text" id="iap-input-discount" class="input" style="width: 100%; color: #f59e0b; font-weight: 700;" value="50% OFF" placeholder="e.g. 50% OFF, LIMITED DEAL" />
+            <div style="font-size: 0.72rem; color: #64748b; margin-top: 4px;">High-conversion promotional badge text</div>
+          </div>
+
+          <div>
+            <label style="font-size: 0.78rem; font-weight: 600; color: #cbd5e1; display: block; margin-bottom: 6px;">
+              Currency Code
+            </label>
+            <input type="text" id="iap-input-currency" class="input" style="width: 100%;" value="USD" placeholder="USD" />
+            <div style="font-size: 0.72rem; color: #64748b; margin-top: 4px;">Fallback currency code (e.g. USD, EUR, INR)</div>
+          </div>
+
+          <div style="grid-column: 1 / -1;">
+            <label style="font-size: 0.78rem; font-weight: 600; color: #cbd5e1; display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+              <span>Plan Title / Paywall Headline</span>
+              <span style="font-size: 0.72rem; color: #f59e0b; background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.3); padding: 2px 8px; border-radius: 4px; font-weight: 700;">Mobile App Paywall</span>
+            </label>
+            <div style="position: relative; display: flex; align-items: center;">
+              <span style="position: absolute; left: 12px; color: #f59e0b; pointer-events: none; display: flex; align-items: center;">
+                <i data-lucide="crown" style="width: 16px; height: 16px;"></i>
+              </span>
+              <input
+                type="text"
+                id="iap-input-title"
+                class="input"
+                style="width: 100%; padding-left: 38px; font-size: 0.92rem; font-weight: 600; color: #fff; background: rgba(0,0,0,0.3); border: 1px solid rgba(255, 255, 255, 0.12);"
+                value="Viral AI Prompt Pro Lifetime"
+                placeholder="e.g. Viral AI Prompt Pro Lifetime"
+              />
+            </div>
+            <div style="font-size: 0.72rem; color: #94a3b8; margin-top: 4px;">
+              Primary plan title prominently displayed in mobile paywall sheets, purchase dialogs, and upgrade promos.
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-top: 16px; padding-top: 14px; border-top: 1px solid rgba(255, 255, 255, 0.08); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <label class="switch">
+              <input type="checkbox" id="iap-input-enabled" checked />
+              <span class="slider"></span>
+            </label>
+            <span style="font-size: 0.88rem; font-weight: 600; color: #f8fafc;">Enable In-App Purchases in Mobile App</span>
+          </div>
+          <div style="font-size: 0.78rem; color: #94a3b8;">
+            Changes take effect immediately across all apps without requiring a new store release.
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Filters & Search Toolbar -->
     <div class="card" style="padding: 16px; margin-bottom: 20px;">
       <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: center;">
@@ -152,9 +269,111 @@ export async function renderPurchases(container, _app) {
     loadPurchasesData(container);
   });
 
+  // Wire IAP Configuration Card
+  const saveIapBtn = container.querySelector('#save-iap-settings-btn');
+  saveIapBtn?.addEventListener('click', () => saveIapConfig(container));
+
+  ['#iap-input-price', '#iap-input-original-price', '#iap-input-discount', '#iap-input-currency', '#iap-input-enabled'].forEach((sel) => {
+    container.querySelector(sel)?.addEventListener('input', () => updateIapPreview(container));
+    container.querySelector(sel)?.addEventListener('change', () => updateIapPreview(container));
+  });
+
   // Initial Data Fetch
   loadPurchasesStats(container);
+  loadIapConfig(container);
   loadPurchasesData(container);
+}
+
+async function loadIapConfig(container) {
+  try {
+    const res = await api.getPurchaseProducts();
+    const data = res?.data || {};
+
+    const skuInput = container.querySelector('#iap-input-sku');
+    const priceInput = container.querySelector('#iap-input-price');
+    const origPriceInput = container.querySelector('#iap-input-original-price');
+    const discountInput = container.querySelector('#iap-input-discount');
+    const currencyInput = container.querySelector('#iap-input-currency');
+    const titleInput = container.querySelector('#iap-input-title');
+    const enabledInput = container.querySelector('#iap-input-enabled');
+
+    if (skuInput && data.sku) skuInput.value = data.sku;
+    if (priceInput && data.price !== undefined) priceInput.value = data.price;
+    if (origPriceInput && data.originalPrice !== undefined) origPriceInput.value = data.originalPrice;
+    if (discountInput && data.discount) discountInput.value = data.discount;
+    if (currencyInput && data.currency) currencyInput.value = data.currency;
+    if (titleInput && data.title) titleInput.value = data.title;
+    if (enabledInput && data.enabled !== undefined) enabledInput.checked = Boolean(data.enabled);
+
+    updateIapPreview(container);
+  } catch (err) {
+    console.error('Failed to load IAP config:', err);
+  }
+}
+
+function updateIapPreview(container) {
+  const price = container.querySelector('#iap-input-price')?.value || '4.99';
+  const origPrice = container.querySelector('#iap-input-original-price')?.value || '9.99';
+  const discount = container.querySelector('#iap-input-discount')?.value || '50% OFF';
+  const currency = container.querySelector('#iap-input-currency')?.value || 'USD';
+  const enabled = container.querySelector('#iap-input-enabled')?.checked;
+
+  const symbol = currency === 'USD' ? '$' : currency === 'EUR' ? '€' : currency === 'INR' ? '₹' : `${currency} `;
+
+  const prevPrice = container.querySelector('#preview-iap-price');
+  const prevOrigPrice = container.querySelector('#preview-iap-original-price');
+  const prevDiscount = container.querySelector('#preview-iap-discount');
+  const prevStatus = container.querySelector('#preview-iap-status');
+
+  if (prevPrice) prevPrice.textContent = `${symbol}${price}`;
+  if (prevOrigPrice) prevOrigPrice.textContent = `${symbol}${origPrice}`;
+  if (prevDiscount) {
+    prevDiscount.textContent = discount;
+    prevDiscount.style.display = discount ? 'inline-block' : 'none';
+  }
+  if (prevStatus) {
+    prevStatus.textContent = enabled ? 'ACTIVE' : 'DISABLED';
+    prevStatus.className = `badge ${enabled ? 'badge-success' : 'badge-danger'}`;
+  }
+}
+
+async function saveIapConfig(container) {
+  const saveBtn = container.querySelector('#save-iap-settings-btn');
+  if (!saveBtn) return;
+  saveBtn.disabled = true;
+  const originalHtml = saveBtn.innerHTML;
+  saveBtn.innerHTML = `<i data-lucide="loader-2" class="spin" style="width: 14px; height: 14px;"></i> Saving...`;
+  if (window.lucide) window.lucide.createIcons();
+
+  try {
+    const sku = container.querySelector('#iap-input-sku')?.value.trim() || 'ai_prompt';
+    const price = container.querySelector('#iap-input-price')?.value.trim() || '4.99';
+    const origPrice = container.querySelector('#iap-input-original-price')?.value.trim() || '9.99';
+    const discount = container.querySelector('#iap-input-discount')?.value.trim() || '50% OFF';
+    const currency = container.querySelector('#iap-input-currency')?.value.trim() || 'USD';
+    const title = container.querySelector('#iap-input-title')?.value.trim() || 'Viral AI Prompt Pro Lifetime';
+    const enabled = container.querySelector('#iap-input-enabled')?.checked ? 'true' : 'false';
+
+    await Promise.all([
+      api.updateAppSetting('iap_sku', sku),
+      api.updateAppSetting('iap_price', price),
+      api.updateAppSetting('iap_original_price', origPrice),
+      api.updateAppSetting('iap_discount', discount),
+      api.updateAppSetting('iap_currency', currency),
+      api.updateAppSetting('iap_title', title),
+      api.updateAppSetting('iap_enabled', enabled),
+    ]);
+
+    updateIapPreview(container);
+    toast.success('In-App Purchase & Discount Offer settings saved successfully!');
+  } catch (err) {
+    console.error('Failed to save IAP settings:', err);
+    toast.error(err.message || 'Failed to save purchase settings');
+  } finally {
+    saveBtn.disabled = false;
+    saveBtn.innerHTML = originalHtml;
+    if (window.lucide) window.lucide.createIcons();
+  }
 }
 
 async function loadPurchasesStats(container) {

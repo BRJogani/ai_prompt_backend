@@ -80,6 +80,43 @@ export const purchaseService = {
   async getAdminStats() {
     return purchaseRepository.getAdminStats();
   },
+
+  async getPurchaseProducts() {
+    const { appSettingRepository } = await import('@modules/app-config/app-setting.repository');
+    const settings = await appSettingRepository.listAll();
+    const map = new Map(settings.map((s) => [s.key, s.value]));
+    const get = (key: string, fallback = ''): string => map.get(key) ?? fallback;
+    const getBool = (key: string, fallback = false): boolean => {
+      const val = map.get(key);
+      return val ? val === 'true' || val === '1' : fallback;
+    };
+
+    const price = parseFloat(get('iap_price', '4.99')) || 4.99;
+    const originalPrice = parseFloat(get('iap_original_price', '9.99')) || 9.99;
+    const discount = get('iap_discount', '50% OFF');
+
+    return {
+      sku: get('iap_sku', 'ai_prompt'),
+      price,
+      originalPrice,
+      discount,
+      currency: get('iap_currency', 'USD'),
+      title: get('iap_title', 'Viral AI Prompt Pro Lifetime'),
+      enabled: getBool('iap_enabled', true),
+    };
+  },
+
+  async resetUserPurchaseStatus(userId: string) {
+    const { prisma } = await import('@config/database');
+    await prisma.user.update({
+      where: { id: userId },
+      data: { isPremium: false },
+    });
+    await prisma.purchase.deleteMany({
+      where: { userId },
+    });
+    return { isPremium: false };
+  },
 };
 
 export default purchaseService;

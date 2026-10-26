@@ -9,7 +9,7 @@ import { recordAuditLog } from '@services/audit.service';
 import { AUDIT_ACTIONS } from '@constants/adminActions';
 
 interface PromptInput {
-  title: string;
+  title?: string;
   slug?: string;
   description?: string;
   promptText: string;
@@ -53,14 +53,15 @@ export const promptService = {
     await assertCategoryExists(input.categoryId);
     await assertAiToolExists(input.aiToolId);
 
-    const baseSlug = slugify(input.slug ?? input.title);
+    const title = input.title?.trim() || input.promptText.trim().split('\n')[0].slice(0, 60).trim() || 'Prompt';
+    const baseSlug = slugify(input.slug ?? title);
     if (!baseSlug) throw new ValidationError('A valid title or slug is required');
     const slug = await ensureUniqueSlug(baseSlug);
 
     const tags = input.tagSlugs?.length ? await tagService.resolveOrCreateTags(input.tagSlugs) : [];
 
     const prompt = await promptRepository.create({
-      title: input.title,
+      title,
       slug,
       description: input.description,
       promptText: input.promptText,

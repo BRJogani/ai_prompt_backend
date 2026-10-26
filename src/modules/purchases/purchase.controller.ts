@@ -18,6 +18,12 @@ export const purchaseController = {
     return sendSuccess(res, status, 'User purchase status');
   }),
 
+  // Test / Mobile client: resets current device user's premium status and clears mock orders
+  resetStatus: catchAsync(async (req: Request, res: Response) => {
+    const result = await purchaseService.resetUserPurchaseStatus(req.deviceUser!.id);
+    return sendSuccess(res, result, 'User purchase status reset');
+  }),
+
   // Admin portal: lists all purchases with search, platform/status filters, pagination
   adminList: catchAsync(async (req: Request, res: Response) => {
     const query = req.query as unknown as AdminPurchaseQuery;
@@ -35,6 +41,12 @@ export const purchaseController = {
   adminStats: catchAsync(async (_req: Request, res: Response) => {
     const stats = await purchaseService.getAdminStats();
     return sendSuccess(res, stats, 'Purchase metrics');
+  }),
+
+  // Mobile client: get active product SKUs, pricing and discount details
+  getProducts: catchAsync(async (_req: Request, res: Response) => {
+    const products = await purchaseService.getPurchaseProducts();
+    return sendSuccess(res, products, 'Purchase products retrieved');
   }),
 };
 

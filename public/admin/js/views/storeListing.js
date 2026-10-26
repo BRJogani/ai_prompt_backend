@@ -1199,6 +1199,38 @@ export async function renderStoreListing(container) {
     });
   }
 
+  function syncDomToData() {
+    const appNameInput = container.querySelector('#input-app-name');
+    if (appNameInput) listingData.appName = appNameInput.value;
+
+    const shortDescInput = container.querySelector('#input-short-desc');
+    if (shortDescInput) listingData.shortDescription = shortDescInput.value;
+
+    const longDescInput = container.querySelector('#input-long-desc');
+    if (longDescInput) listingData.longDescription = longDescInput.value;
+
+    const categoryInput = container.querySelector('#input-category');
+    if (categoryInput) listingData.category = categoryInput.value;
+
+    const secCategoryInput = container.querySelector('#input-sec-category');
+    if (secCategoryInput) listingData.secondaryCategory = secCategoryInput.value;
+
+    const ratingInput = container.querySelector('#input-content-rating');
+    if (ratingInput) listingData.contentRating = ratingInput.value;
+
+    const emailInput = container.querySelector('#input-dev-email');
+    if (emailInput) listingData.developerEmail = emailInput.value;
+
+    const privacyUrlInput = container.querySelector('#input-privacy-url');
+    if (privacyUrlInput) listingData.privacyPolicyUrl = privacyUrlInput.value;
+
+    const iconUrlInput = container.querySelector('#input-app-icon-url');
+    if (iconUrlInput && iconUrlInput.value.trim()) listingData.appIconUrl = iconUrlInput.value.trim();
+
+    const featureUrlInput = container.querySelector('#input-feature-graphic-url');
+    if (featureUrlInput && featureUrlInput.value.trim()) listingData.featureGraphicUrl = featureUrlInput.value.trim();
+  }
+
   // =========================================================================
   // GLOBAL ACTIONS & UTILITIES
   // =========================================================================
@@ -1206,6 +1238,7 @@ export async function renderStoreListing(container) {
     // Tab switching
     container.querySelectorAll('.store-tab-btn').forEach((btn) => {
       btn.addEventListener('click', () => {
+        syncDomToData();
         container.querySelectorAll('.store-tab-btn').forEach((b) => b.classList.remove('active'));
         btn.classList.add('active');
         activeTab = btn.getAttribute('data-tab');
@@ -1217,6 +1250,8 @@ export async function renderStoreListing(container) {
     container.querySelector('#btn-save-to-backend')?.addEventListener('click', async () => {
       const btn = container.querySelector('#btn-save-to-backend');
       if (!btn) return;
+      syncDomToData();
+
       btn.disabled = true;
       const origHtml = btn.innerHTML;
       btn.innerHTML = `<i data-lucide="loader" style="width: 14px; height: 14px; animation: spin 1s linear infinite;"></i> Saving...`;
@@ -1226,7 +1261,9 @@ export async function renderStoreListing(container) {
         await api.updateAppSetting('playstore_listing_data', JSON.stringify(listingData));
         toast.success('Saved Play Store listing details to database!');
       } catch (err) {
-        toast.error(err.message || 'Failed to persist listing details');
+        console.error('Failed to save Play Store listing:', err);
+        const errMsg = err.data?.errors?.[0]?.message || err.data?.message || err.message || 'Failed to persist listing details';
+        toast.error(errMsg);
       } finally {
         btn.disabled = false;
         btn.innerHTML = origHtml;
@@ -1236,6 +1273,7 @@ export async function renderStoreListing(container) {
 
     // Copy all metadata formatted for Google Play Console
     container.querySelector('#btn-copy-all-metadata')?.addEventListener('click', () => {
+      syncDomToData();
       const allText = `=====================================================
 GOOGLE PLAY STORE LISTING DETAILS
 =====================================================
@@ -1274,6 +1312,7 @@ Tablet Screenshots: ${listingData.screenshotsTablet.length} mockups
 
     // Export metadata JSON
     container.querySelector('#btn-export-json')?.addEventListener('click', () => {
+      syncDomToData();
       const blob = new Blob([JSON.stringify(listingData, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');

@@ -449,116 +449,7 @@
       margin-top: auto;
     }
 
-    /* Interactive Prompt Preview Playground */
-    .playground-section {
-      padding: 60px 0 80px 0;
-    }
 
-    .prompt-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-      gap: 24px;
-    }
-
-    .prompt-card {
-      background: var(--bg-card);
-      border: 1px solid var(--border-subtle);
-      border-radius: var(--radius-md);
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-      transition: all 0.25s ease;
-    }
-
-    .prompt-card:hover {
-      border-color: rgba(99, 102, 241, 0.4);
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
-      transform: translateY(-3px);
-    }
-
-    .prompt-banner {
-      height: 160px;
-      position: relative;
-      display: flex;
-      align-items: flex-end;
-      padding: 14px 18px;
-    }
-
-    .prompt-banner-1 { background: linear-gradient(135deg, #1e1b4b, #311042); }
-    .prompt-banner-2 { background: linear-gradient(135deg, #0f2027, #2c5364); }
-    .prompt-banner-3 { background: linear-gradient(135deg, #1f1c2c, #928dab); }
-
-    .prompt-engine-tag {
-      background: rgba(0, 0, 0, 0.6);
-      backdrop-filter: blur(8px);
-      padding: 4px 12px;
-      border-radius: var(--radius-full);
-      font-size: 0.75rem;
-      font-weight: 700;
-      color: #fff;
-      border: 1px solid rgba(255, 255, 255, 0.15);
-    }
-
-    .prompt-content {
-      padding: 20px;
-      display: flex;
-      flex-direction: column;
-      gap: 14px;
-      flex: 1;
-    }
-
-    .prompt-title {
-      font-weight: 700;
-      color: #fff;
-      font-size: 1.05rem;
-    }
-
-    .prompt-text-box {
-      background: rgba(10, 15, 29, 0.85);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      border-radius: var(--radius-sm);
-      padding: 12px;
-      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-      font-size: 0.82rem;
-      color: #e2e8f0;
-      line-height: 1.5;
-      position: relative;
-    }
-
-    .prompt-tags-row {
-      display: flex;
-      gap: 6px;
-      flex-wrap: wrap;
-    }
-
-    .prompt-tag {
-      font-size: 0.72rem;
-      padding: 2px 8px;
-      background: rgba(255, 255, 255, 0.06);
-      border-radius: 6px;
-      color: #94a3b8;
-    }
-
-    .copy-prompt-btn {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      background: linear-gradient(135deg, #6366f1, #06b6d4);
-      color: white;
-      border: none;
-      padding: 10px 18px;
-      border-radius: var(--radius-sm);
-      font-weight: 600;
-      font-size: 0.88rem;
-      cursor: pointer;
-      transition: opacity 0.2s, transform 0.15s;
-    }
-
-    .copy-prompt-btn:hover {
-      opacity: 0.92;
-      transform: translateY(-1px);
-    }
 
     /* Engine Badges Section */
     .engines-bar {
@@ -699,7 +590,6 @@
 
       <nav class="nav-links">
         <a href="#how-it-works">How to Use</a>
-        <a href="#prompts">Explore Prompts</a>
         <a href="#engines">AI Engines</a>
       </nav>
 
@@ -848,84 +738,7 @@
       </div>
     </section>
 
-    <!-- Interactive Prompt Playground -->
-    <section class="playground-section" id="prompts">
-      <div class="section-title-wrap">
-        <span class="section-badge">Live Interactive Tryout</span>
-        <h2 class="section-title">Try Copying a Prompt Right Now</h2>
-        <p class="section-desc">Experience the 1-click copy speed directly on this page.</p>
-      </div>
 
-      <div class="prompt-grid">
-        
-        <!-- Prompt 1 -->
-        <div class="prompt-card">
-          <div class="prompt-banner prompt-banner-1">
-            <span class="prompt-engine-tag">Midjourney v6</span>
-          </div>
-          <div class="prompt-content">
-            <h4 class="prompt-title">Cyberpunk Neon Rain Samurai</h4>
-            <div class="prompt-text-box">
-              Cinematic wide shot of a futuristic cyber samurai standing on wet neon street in rain, reflections of glowing holographic billboards, 8k, photorealistic, Unreal Engine 5 render --ar 16:9 --v 6.0
-            </div>
-            <div class="prompt-tags-row">
-              <span class="prompt-tag">#Cyberpunk</span>
-              <span class="prompt-tag">#16:9</span>
-              <span class="prompt-tag">#Cinematic</span>
-            </div>
-            <button class="copy-prompt-btn" data-text="Cinematic wide shot of a futuristic cyber samurai standing on wet neon street in rain, reflections of glowing holographic billboards, 8k, photorealistic, Unreal Engine 5 render --ar 16:9 --v 6.0">
-              <i data-lucide="copy" style="width: 16px; height: 16px;"></i>
-              <span>Copy Prompt</span>
-            </button>
-          </div>
-        </div>
-
-        <!-- Prompt 2 -->
-        <div class="prompt-card">
-          <div class="prompt-banner prompt-banner-2">
-            <span class="prompt-engine-tag">OpenAI Sora / Runway</span>
-          </div>
-          <div class="prompt-content">
-            <h4 class="prompt-title">Cosmic Bioluminescent River</h4>
-            <div class="prompt-text-box">
-              FPV drone flythrough along glowing crystalline river in mystical subterranean forest, bioluminescent flora pulsing with light, ambient particles, smooth 60fps cinematic camera orbit
-            </div>
-            <div class="prompt-tags-row">
-              <span class="prompt-tag">#AIVideo</span>
-              <span class="prompt-tag">#Motion:Orbit</span>
-              <span class="prompt-tag">#Sora</span>
-            </div>
-            <button class="copy-prompt-btn" data-text="FPV drone flythrough along glowing crystalline river in mystical subterranean forest, bioluminescent flora pulsing with light, ambient particles, smooth 60fps cinematic camera orbit">
-              <i data-lucide="copy" style="width: 16px; height: 16px;"></i>
-              <span>Copy Prompt</span>
-            </button>
-          </div>
-        </div>
-
-        <!-- Prompt 3 -->
-        <div class="prompt-card">
-          <div class="prompt-banner prompt-banner-3">
-            <span class="prompt-engine-tag">DALL-E 3 / Flux</span>
-          </div>
-          <div class="prompt-content">
-            <h4 class="prompt-title">Isometric Cozy Hacker Workspace</h4>
-            <div class="prompt-text-box">
-              3D isometric diorama of a cozy retrofuturistic developer desk, dual curved holographic monitors, glowing neon bonsai tree, warm amber desk lamp, soft ambient occlusion clay render
-            </div>
-            <div class="prompt-tags-row">
-              <span class="prompt-tag">#3DIsometric</span>
-              <span class="prompt-tag">#ClayRender</span>
-              <span class="prompt-tag">#Square</span>
-            </div>
-            <button class="copy-prompt-btn" data-text="3D isometric diorama of a cozy retrofuturistic developer desk, dual curved holographic monitors, glowing neon bonsai tree, warm amber desk lamp, soft ambient occlusion clay render">
-              <i data-lucide="copy" style="width: 16px; height: 16px;"></i>
-              <span>Copy Prompt</span>
-            </button>
-          </div>
-        </div>
-
-      </div>
-    </section>
 
     <!-- Supported AI Engines -->
     <section class="engines-bar" id="engines">
@@ -977,7 +790,7 @@
 
         <div class="footer-links">
           <a href="#how-it-works">How to Use</a>
-          <a href="#prompts">Prompts</a>
+          <a href="#engines">AI Engines</a>
           <a href="https://play.google.com/store/apps/details?id=com.gamesphere.viral.ai.photo.prompt.app" target="_blank">Google Play</a>
         </div>
       </div>

@@ -70,6 +70,25 @@ export const adConfigService = {
     return config;
   },
 
+  async upsert(input: AdConfigInput, adminId: string, ipAddress?: string) {
+    const platform = input.platform ?? 'ALL';
+    if (input.enabled === true) {
+      try {
+        const isMasterOn = await appSettingService.getBoolean('ads_enabled', false);
+        if (!isMasterOn) {
+          await appSettingService.update('ads_enabled', 'true', adminId, ipAddress);
+        }
+      } catch {
+        // non-blocking
+      }
+    }
+    const existing = await adConfigRepository.findByTypeAndPlatform(input.adType, platform);
+    if (existing) {
+      return this.update(existing.id, input, adminId, ipAddress);
+    }
+    return this.create(input, adminId, ipAddress);
+  },
+
   async update(id: string, input: Partial<AdConfigInput>, adminId: string, ipAddress?: string) {
     const existing = await adConfigRepository.findById(id);
     if (!existing) throw new NotFoundError('Ad config not found');
@@ -158,18 +177,18 @@ export const adConfigService = {
       ads[key] = {
         enabled: masterEnabled && (row?.enabled ?? false),
         adUnitId: row?.adUnitId ?? '',
-        frequencyType: row?.frequencyType ?? 'MANUAL',
-        frequencyValue: row?.frequencyValue ?? 0,
+        frequencyType: row?.frequencyType ?? (adType === 'INTERSTITIAL' || adType === 'NATIVE' ? 'EVERY_N_ACTIONS' : 'MANUAL'),
+        frequencyValue: (row?.frequencyValue !== undefined && row.frequencyValue > 0) ? row.frequencyValue : (adType === 'INTERSTITIAL' ? 3 : adType === 'NATIVE' ? 6 : 0),
         cooldownSeconds: row?.cooldownSeconds ?? 0,
         maxPerSession: row?.maxPerSession ?? 0,
-        showOnHome: row?.showOnHome ?? false,
-        showOnPromptDetail: row?.showOnPromptDetail ?? false,
-        showOnCategory: row?.showOnCategory ?? false,
-        showOnSearch: row?.showOnSearch ?? false,
+        showOnHome: row?.showOnHome ?? true,
+        showOnPromptDetail: row?.showOnPromptDetail ?? true,
+        showOnCategory: row?.showOnCategory ?? true,
+        showOnSearch: row?.showOnSearch ?? true,
       };
     }
 
-    return { ads };
+    return { ads, enabled: masterEnabled };
   },
 };
 

@@ -51,14 +51,21 @@ export async function recalculateTrendingScores(): Promise<{ updated: number; du
     select: { id: true, viewCount: true, favoriteCount: true, copyCount: true, shareCount: true, publishedAt: true },
   });
 
-  await Promise.all(
-    prompts.map((prompt) =>
-      prisma.prompt.update({
-        where: { id: prompt.id },
-        data: { trendingScore: computeTrendingScore(prompt) },
-      }),
-    ),
-  );
+  // Update in sequential batches to prevent database write conflicts / deadlocks
+  const batchSize = 10;
+  for (let i = 0; i < prompts.length; i += batchSize) {
+    const chunk = prompts.slice(i, i + batchSize);
+    await Promise.all(
+      chunk.map((prompt) =>
+        prisma.prompt.update({
+          where: { id: prompt.id },
+          data: { trendingScore: computeTrendingScore(prompt) },
+        }).catch((err) => {
+          logger.warn({ promptId: prompt.id, err: err.message }, 'Failed to update prompt trending score');
+        }),
+      ),
+    );
+  }
 
   const durationMs = Date.now() - startedAt;
   logger.info({ updated: prompts.length, durationMs }, 'Trending scores recalculated');

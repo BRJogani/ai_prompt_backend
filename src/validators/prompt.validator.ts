@@ -5,7 +5,7 @@ const contentTypeEnum = z.enum(['IMAGE', 'VIDEO', 'BOTH']);
 const promptStatusEnum = z.enum(['DRAFT', 'REVIEW', 'PUBLISHED', 'ARCHIVED']);
 
 export const createPromptSchema = z.object({
-  title: z.string().min(1, 'Title is required').max(200),
+  title: z.string().max(200).optional(),
   slug: z
     .string()
     .min(1)

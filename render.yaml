@@ -17,9 +17,9 @@ services:
       - key: JWT_REFRESH_SECRET
         generateValue: true
       - key: JWT_ACCESS_EXPIRES_IN
-        value: 15m
+        value: 365d
       - key: JWT_REFRESH_EXPIRES_IN
-        value: 30d
+        value: 365d
       - key: CORS_ORIGIN
         value: "*"
       - key: RATE_LIMIT_WINDOW_MS

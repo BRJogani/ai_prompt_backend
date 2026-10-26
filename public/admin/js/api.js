@@ -11,7 +11,8 @@ export const authState = {
   set token(val) {
     if (val) {
       localStorage.setItem('admin_token', val);
-      document.cookie = `admin_token=${encodeURIComponent(val)}; path=/; max-age=86400; SameSite=Lax`;
+      // 1 year persistence (31536000 seconds)
+      document.cookie = `admin_token=${encodeURIComponent(val)}; path=/; max-age=31536000; SameSite=Lax`;
     } else {
       localStorage.removeItem('admin_token');
       document.cookie = 'admin_token=; path=/; max-age=0; SameSite=Lax';
@@ -36,6 +37,43 @@ export const authState = {
   },
 };
 
+let isRefreshing = false;
+let refreshQueue = [];
+
+function processRefreshQueue(error, newToken = null) {
+  refreshQueue.forEach((prom) => {
+    if (error) {
+      prom.reject(error);
+    } else {
+      prom.resolve(newToken);
+    }
+  });
+  refreshQueue = [];
+}
+
+async function tryRefreshToken() {
+  const refreshToken = localStorage.getItem('admin_refresh_token');
+  if (!refreshToken) return null;
+  try {
+    const res = await fetch(`${API_BASE}/admin/auth/refresh`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refreshToken }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (res.ok && data?.data?.accessToken) {
+      authState.token = data.data.accessToken;
+      if (data.data.refreshToken) {
+        localStorage.setItem('admin_refresh_token', data.data.refreshToken);
+      }
+      return data.data.accessToken;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
 export async function apiRequest(endpoint, options = {}) {
   const token = localStorage.getItem('admin_token');
   const headers = {
@@ -52,7 +90,53 @@ export async function apiRequest(endpoint, options = {}) {
       headers,
     });
 
-    if (response.status === 401 && !endpoint.includes('/admin/auth/login')) {
+    if (response.status === 401 && !endpoint.includes('/admin/auth/login') && !endpoint.includes('/admin/auth/refresh')) {
+      const refreshToken = localStorage.getItem('admin_refresh_token');
+      if (refreshToken) {
+        if (!isRefreshing) {
+          isRefreshing = true;
+          try {
+            const newToken = await tryRefreshToken();
+            isRefreshing = false;
+            if (newToken) {
+              processRefreshQueue(null, newToken);
+              // Retry current failed request with new access token
+              return apiRequest(endpoint, {
+                ...options,
+                headers: {
+                  ...(options.headers || {}),
+                  Authorization: `Bearer ${newToken}`,
+                },
+              });
+            } else {
+              processRefreshQueue(new Error('Refresh failed'));
+            }
+          } catch (refreshErr) {
+            isRefreshing = false;
+            processRefreshQueue(refreshErr);
+          }
+        } else {
+          // Another request is currently refreshing the token; wait for it
+          return new Promise((resolve, reject) => {
+            refreshQueue.push({
+              resolve: (newToken) => {
+                resolve(
+                  apiRequest(endpoint, {
+                    ...options,
+                    headers: {
+                      ...(options.headers || {}),
+                      Authorization: `Bearer ${newToken}`,
+                    },
+                  })
+                );
+              },
+              reject: (err) => reject(err),
+            });
+          });
+        }
+      }
+
+      // Only clear and dispatch unauthorized if there is no token at all or refresh definitively failed
       authState.clear();
       window.dispatchEvent(new CustomEvent('auth:unauthorized'));
       throw new Error('Session expired. Please sign in again.');
@@ -61,7 +145,13 @@ export async function apiRequest(endpoint, options = {}) {
     const data = await response.json().catch(() => ({}));
 
     if (!response.ok) {
-      const errorMsg = data.message || `Request failed with status ${response.status}`;
+      let errorMsg = data.message;
+      if (Array.isArray(data.errors) && data.errors.length > 0) {
+        errorMsg = data.errors.map((e) => e.message || (typeof e === 'string' ? e : JSON.stringify(e))).join('; ');
+      }
+      if (!errorMsg) {
+        errorMsg = `Request failed with status ${response.status}`;
+      }
       const err = new Error(errorMsg);
       err.data = data;
       err.status = response.status;
@@ -172,6 +262,7 @@ export const api = {
   getAdConfigs: () => apiRequest('/admin/ads'),
   createAdConfig: (data) => apiRequest('/admin/ads', { method: 'POST', body: JSON.stringify(data) }),
   updateAdConfig: (id, data) => apiRequest(`/admin/ads/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  upsertAdConfig: (data) => apiRequest('/admin/ads/upsert', { method: 'POST', body: JSON.stringify(data) }),
   disableAllAds: () => apiRequest('/admin/ads/disable-all', { method: 'POST' }),
 
   // Media & Uploads (Cloudinary backed)
@@ -202,6 +293,7 @@ export const api = {
     return apiRequest(`/admin/purchases${q ? `?${q}` : ''}`);
   },
   getPurchaseStats: () => apiRequest('/admin/purchases/stats'),
+  getPurchaseProducts: () => apiRequest('/purchases/products'),
 
   // Health
   getHealth: () => apiRequest('/health'),

@@ -39,6 +39,18 @@ adminAdConfigRouter.post(
   validate(createAdConfigSchema),
   adConfigController.adminCreate,
 );
+adminAdConfigRouter.post(
+  '/upsert',
+  authorize(...CONTENT_MANAGE_ROLES),
+  adConfigController.adminUpsert,
+);
+adminAdConfigRouter.put(
+  '/:id',
+  authorize(...CONTENT_MANAGE_ROLES),
+  validate(idParamSchema(), 'params'),
+  validate(updateAdConfigSchema),
+  adConfigController.adminUpdate,
+);
 adminAdConfigRouter.patch(
   '/:id',
   authorize(...CONTENT_MANAGE_ROLES),

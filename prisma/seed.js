@@ -314,8 +314,13 @@ const APP_SETTING_SEED = [
     { key: 'maintenance_message', value: 'We are currently updating the application. Please check back soon.', valueType: 'string', description: 'Message shown on the maintenance screen when maintenance_mode is true.' },
     { key: 'support_email', value: 'support@example.com', valueType: 'string', description: 'Support contact email.' },
     { key: 'privacy_policy_url', value: 'https://example.com/privacy', valueType: 'string', description: 'Privacy policy URL.' },
-    { key: 'terms_url', value: 'https://example.com/terms', valueType: 'string', description: 'Terms of service URL.' },
     { key: 'about_text', value: 'Discover, copy, and get inspired by AI-generated prompts.', valueType: 'string', description: 'About screen copy.' },
+    { key: 'iap_sku', value: 'ai_prompt', valueType: 'string', description: 'Google Play / App Store Product SKU.' },
+    { key: 'iap_price', value: '4.99', valueType: 'number', description: 'Current discounted purchase price.' },
+    { key: 'iap_original_price', value: '9.99', valueType: 'number', description: 'Original strike-through purchase price.' },
+    { key: 'iap_discount', value: '50% OFF', valueType: 'string', description: 'Promotional discount banner text or percentage.' },
+    { key: 'iap_currency', value: 'USD', valueType: 'string', description: 'Default currency code.' },
+    { key: 'iap_title', value: 'Viral AI Prompt Pro Lifetime', valueType: 'string', description: 'In-app purchase product title.' },
 ];
 async function seedAppSettings() {
     for (const setting of APP_SETTING_SEED) {

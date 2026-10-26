@@ -17,8 +17,8 @@ const envSchema = z.object({
   // JWT (used from Phase 3 onward, validated now so .env stays consistent)
   JWT_ACCESS_SECRET: z.string().min(16, 'JWT_ACCESS_SECRET must be at least 16 characters').default('dev-access-secret-change-me-please'),
   JWT_REFRESH_SECRET: z.string().min(16, 'JWT_REFRESH_SECRET must be at least 16 characters').default('dev-refresh-secret-change-me-please'),
-  JWT_ACCESS_EXPIRES_IN: z.string().default('15m'),
-  JWT_REFRESH_EXPIRES_IN: z.string().default('30d'),
+  JWT_ACCESS_EXPIRES_IN: z.string().default('365d'),
+  JWT_REFRESH_EXPIRES_IN: z.string().default('365d'),
 
   // Cloudinary (used from Phase 4 onward)
   CLOUDINARY_CLOUD_NAME: z.string().optional().default(''),

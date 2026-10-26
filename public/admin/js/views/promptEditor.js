@@ -71,11 +71,6 @@ export async function renderPromptEditor(container, router, promptId = null) {
               Prompt Details
             </div>
 
-            <!-- Title -->
-            <div class="form-group">
-              <label class="form-label" for="editor-title">Prompt Title *</label>
-              <input type="text" id="editor-title" class="input-text" placeholder="e.g. Cinematic Luxury Portrait in Golden Hour" value="${prompt ? escapeHtml(prompt.title) : ''}" required />
-            </div>
 
             <!-- Category & Target Format -->
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
@@ -337,17 +332,18 @@ export async function renderPromptEditor(container, router, promptId = null) {
 
   const saveBtn = container.querySelector('#editor-save-btn');
   saveBtn?.addEventListener('click', async () => {
-    const title = container.querySelector('#editor-title').value.trim();
     const categoryId = container.querySelector('#editor-category').value;
     const contentType = container.querySelector('#editor-content-type').value;
     const status = container.querySelector('#editor-status').value;
     const promptText = container.querySelector('#editor-prompt-text').value.trim();
 
-    if (!title) {
-      toast.error('Prompt title is required');
-      container.querySelector('#editor-title').focus();
+    if (!promptText) {
+      toast.error('Prompt script text is required');
+      container.querySelector('#editor-prompt-text').focus();
       return;
     }
+
+    const title = (prompt && prompt.title) || promptText.split('\n')[0].slice(0, 60).trim() || 'Prompt';
 
     if (!categoryId) {
       toast.error('Please select a category');

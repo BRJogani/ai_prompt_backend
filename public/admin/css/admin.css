@@ -541,8 +541,9 @@ body {
   pointer-events: none;
 }
 
-.input-text, .input-select, .input-textarea {
+.input, .input-text, .input-select, .input-textarea, .form-control {
   width: 100%;
+  box-sizing: border-box;
   background-color: var(--bg-input);
   border: 1px solid var(--border-subtle);
   color: var(--text-primary);
@@ -553,11 +554,12 @@ body {
   transition: all var(--transition-fast);
 }
 
-.search-input-wrapper .input-text {
+.search-input-wrapper .input-text,
+.search-input-wrapper .input {
   padding-left: 40px;
 }
 
-.input-text:focus, .input-select:focus, .input-textarea:focus {
+.input:focus, .input-text:focus, .input-select:focus, .input-textarea:focus, .form-control:focus {
   outline: none;
   border-color: var(--border-focus);
   box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
@@ -897,6 +899,118 @@ input:checked + .slider {
 
 input:checked + .slider:before {
   transform: translateX(20px);
+}
+
+/* Compact switch for table rows & cards */
+.switch.switch-sm {
+  width: 36px;
+  height: 20px;
+}
+.switch.switch-sm .slider {
+  border-radius: 20px;
+}
+.switch.switch-sm .slider:before {
+  height: 14px;
+  width: 14px;
+  left: 3px;
+  bottom: 3px;
+}
+.switch.switch-sm input:checked + .slider:before {
+  transform: translateX(16px);
+}
+
+/* Staggered Masonry Waterfall Prompt Grid */
+.prompts-grid {
+  column-count: 4;
+  column-gap: 18px;
+  padding: 18px;
+  display: block;
+}
+
+@media (max-width: 1500px) {
+  .prompts-grid {
+    column-count: 3;
+  }
+}
+
+@media (max-width: 1050px) {
+  .prompts-grid {
+    column-count: 2;
+  }
+}
+
+@media (max-width: 650px) {
+  .prompts-grid {
+    column-count: 1;
+  }
+}
+
+.prompt-grid-item {
+  break-inside: avoid;
+  margin-bottom: 18px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.prompt-grid-item:hover {
+  transform: translateY(-3px);
+  border-color: rgba(99, 102, 241, 0.45);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.35);
+}
+
+.prompt-grid-thumb {
+  position: relative;
+  width: 100%;
+  aspect-ratio: auto;
+  overflow: hidden;
+  background: #090d16;
+}
+
+.prompt-grid-thumb img {
+  width: 100%;
+  height: auto;
+  max-height: 520px;
+  display: block;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.prompt-grid-item:hover .prompt-grid-thumb img {
+  transform: scale(1.03);
+}
+
+.prompt-grid-body {
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex: 1;
+  justify-content: space-between;
+}
+
+.prompt-grid-text {
+  font-size: 0.86rem;
+  color: var(--text-primary);
+  line-height: 1.45;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.prompt-grid-footer {
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-top: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
 }
 
 /* Modals */

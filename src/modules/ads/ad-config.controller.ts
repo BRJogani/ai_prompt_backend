@@ -21,6 +21,11 @@ export const adConfigController = {
     return sendSuccess(res, config, 'Ad config created', 201);
   }),
 
+  adminUpsert: catchAsync(async (req: Request, res: Response) => {
+    const config = await adConfigService.upsert(req.body, req.admin!.id, req.ip);
+    return sendSuccess(res, config, 'Ad config saved');
+  }),
+
   adminUpdate: catchAsync(async (req: Request, res: Response) => {
     const config = await adConfigService.update(req.params.id, req.body, req.admin!.id, req.ip);
     return sendSuccess(res, config, 'Ad config updated');

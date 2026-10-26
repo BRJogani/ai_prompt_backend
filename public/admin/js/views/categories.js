@@ -97,9 +97,15 @@ async function fetchCategories(container) {
               </span>
             </td>
             <td>
-              <span class="badge ${c.status === 'ACTIVE' ? 'badge-success' : 'badge-danger'}">
-                ${c.status}
-              </span>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <label class="switch switch-sm" title="Toggle Category Status">
+                  <input type="checkbox" class="cat-status-toggle" data-id="${c.id}" ${c.status === 'ACTIVE' ? 'checked' : ''}>
+                  <span class="slider"></span>
+                </label>
+                <span class="badge ${c.status === 'ACTIVE' ? 'badge-success' : 'badge-danger'}" id="cat-badge-${c.id}">
+                  ${c.status}
+                </span>
+              </div>
             </td>
             <td style="text-align: right;">
               <div style="display: inline-flex; gap: 6px;">
@@ -117,6 +123,29 @@ async function fetchCategories(container) {
       .join('');
 
     if (window.lucide) window.lucide.createIcons();
+
+    // Wire status on/off switch
+    tbody.querySelectorAll('.cat-status-toggle').forEach((toggle) => {
+      toggle.addEventListener('change', async () => {
+        const id = toggle.getAttribute('data-id');
+        const isChecked = toggle.checked;
+        const nextStatus = isChecked ? 'ACTIVE' : 'INACTIVE';
+        try {
+          await api.updateCategory(id, { status: nextStatus });
+          toast.success(`Category status updated to ${nextStatus}`);
+          const badge = tbody.querySelector(`#cat-badge-${id}`);
+          if (badge) {
+            badge.className = `badge ${isChecked ? 'badge-success' : 'badge-danger'}`;
+            badge.textContent = nextStatus;
+          }
+          const cat = categories.find((c) => c.id === id);
+          if (cat) cat.status = nextStatus;
+        } catch (err) {
+          toggle.checked = !isChecked;
+          toast.error(err.message || 'Failed to update category status');
+        }
+      });
+    });
 
     tbody.querySelectorAll('.cat-image-click').forEach((img) => {
       img.addEventListener('click', (e) => {
