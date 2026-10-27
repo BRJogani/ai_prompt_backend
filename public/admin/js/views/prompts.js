@@ -17,6 +17,7 @@ let state = {
   isPremium: '',
   isFeatured: '',
   viewMode: localStorage.getItem('prompts_view_mode') || 'list',
+  gridCols: parseInt(localStorage.getItem('prompts_grid_cols') || '4', 10),
   isLoadingMore: false,
   hasMore: true,
 };
@@ -130,14 +131,27 @@ export async function renderPrompts(container, router, options = {}) {
             </button>
           ` : ''}
 
-          <!-- View Mode Toggle (List vs Grid) -->
-          <div style="display: inline-flex; border: 1px solid var(--border-color); border-radius: var(--radius-md); overflow: hidden; margin-left: auto;">
-            <button type="button" class="btn btn-sm ${state.viewMode === 'list' ? 'btn-primary' : 'btn-secondary'}" id="btn-view-list" title="Table List View" style="border-radius: 0; padding: 6px 12px; display: inline-flex; align-items: center; gap: 5px;">
-              <i data-lucide="list" style="width: 15px; height: 15px;"></i> List
-            </button>
-            <button type="button" class="btn btn-sm ${state.viewMode === 'grid' ? 'btn-primary' : 'btn-secondary'}" id="btn-view-grid" title="Cards Grid View" style="border-radius: 0; padding: 6px 12px; display: inline-flex; align-items: center; gap: 5px;">
-              <i data-lucide="grid" style="width: 15px; height: 15px;"></i> Grid
-            </button>
+          <!-- View Mode Toggle (List vs Grid) + Columns Selector -->
+          <div style="display: inline-flex; align-items: center; gap: 8px; margin-left: auto;">
+            <div id="grid-columns-control" style="${state.viewMode === 'grid' ? 'display: inline-flex;' : 'display: none;'} align-items: center; gap: 6px;">
+              <span style="font-size: 0.8rem; color: var(--text-muted); font-weight: 500;">Columns:</span>
+              <select id="grid-columns-select" class="input-select" style="padding: 4px 8px; font-size: 0.82rem; height: 32px; width: auto; min-width: 90px;">
+                <option value="2" ${state.gridCols === 2 ? 'selected' : ''}>2 Cols</option>
+                <option value="3" ${state.gridCols === 3 ? 'selected' : ''}>3 Cols</option>
+                <option value="4" ${state.gridCols === 4 ? 'selected' : ''}>4 Cols (Default)</option>
+                <option value="5" ${state.gridCols === 5 ? 'selected' : ''}>5 Cols</option>
+                <option value="6" ${state.gridCols === 6 ? 'selected' : ''}>6 Cols</option>
+              </select>
+            </div>
+
+            <div style="display: inline-flex; border: 1px solid var(--border-color); border-radius: var(--radius-md); overflow: hidden;">
+              <button type="button" class="btn btn-sm ${state.viewMode === 'list' ? 'btn-primary' : 'btn-secondary'}" id="btn-view-list" title="Table List View" style="border-radius: 0; padding: 6px 12px; display: inline-flex; align-items: center; gap: 5px;">
+                <i data-lucide="list" style="width: 15px; height: 15px;"></i> List
+              </button>
+              <button type="button" class="btn btn-sm ${state.viewMode === 'grid' ? 'btn-primary' : 'btn-secondary'}" id="btn-view-grid" title="Cards Grid View" style="border-radius: 0; padding: 6px 12px; display: inline-flex; align-items: center; gap: 5px;">
+                <i data-lucide="grid" style="width: 15px; height: 15px;"></i> Grid
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -165,7 +179,7 @@ export async function renderPrompts(container, router, options = {}) {
         </div>
 
         <!-- Cards Grid View Container -->
-        <div id="prompts-grid-container" class="prompts-grid" style="${state.viewMode === 'grid' ? '' : 'display: none;'}">
+        <div id="prompts-grid-container" class="prompts-grid" style="${state.viewMode === 'grid' ? '' : 'display: none;'} --prompts-grid-cols: ${state.gridCols};">
           <div style="text-align: center; padding: 40px; color: var(--text-muted); grid-column: 1 / -1;">Loading prompt grid...</div>
         </div>
 
@@ -252,7 +266,17 @@ export async function renderPrompts(container, router, options = {}) {
     router.navigate('prompt-editor');
   });
 
-  // Wire View Mode Switcher
+  // Wire View Mode Switcher & Column Control
+  const colsControl = container.querySelector('#grid-columns-control');
+  container.querySelector('#grid-columns-select')?.addEventListener('change', (e) => {
+    state.gridCols = parseInt(e.target.value, 10) || 4;
+    localStorage.setItem('prompts_grid_cols', state.gridCols);
+    const gridWrap = container.querySelector('#prompts-grid-container');
+    if (gridWrap) {
+      gridWrap.style.setProperty('--prompts-grid-cols', state.gridCols);
+    }
+  });
+
   container.querySelector('#btn-view-list')?.addEventListener('click', () => {
     if (state.viewMode !== 'list') {
       state.viewMode = 'list';
@@ -267,6 +291,7 @@ export async function renderPrompts(container, router, options = {}) {
       const gridWrap = container.querySelector('#prompts-grid-container');
       if (tableWrap) tableWrap.style.display = '';
       if (gridWrap) gridWrap.style.display = 'none';
+      if (colsControl) colsControl.style.display = 'none';
       if (window.lucide) window.lucide.createIcons();
     }
   });
@@ -284,7 +309,11 @@ export async function renderPrompts(container, router, options = {}) {
       const tableWrap = container.querySelector('#prompts-table-container');
       const gridWrap = container.querySelector('#prompts-grid-container');
       if (tableWrap) tableWrap.style.display = 'none';
-      if (gridWrap) gridWrap.style.display = 'grid';
+      if (gridWrap) {
+        gridWrap.style.display = 'grid';
+        gridWrap.style.setProperty('--prompts-grid-cols', state.gridCols);
+      }
+      if (colsControl) colsControl.style.display = 'inline-flex';
       if (window.lucide) window.lucide.createIcons();
     }
   });

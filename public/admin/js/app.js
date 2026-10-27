@@ -185,10 +185,6 @@ class AdminApp {
               <a href="/api/docs" target="_blank" class="btn btn-secondary btn-sm" id="top-nav-api-docs">
                 <i data-lucide="book-open" style="width: 14px; height: 14px;"></i> API Docs
               </a>
-
-              <a href="http://localhost:5555" target="_blank" class="btn btn-secondary btn-sm">
-                <i data-lucide="database" style="width: 14px; height: 14px;"></i> Studio
-              </a>
             </div>
           </header>
 

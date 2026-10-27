@@ -58,10 +58,13 @@ export function createApp(): Application {
   const publicDir = path.join(process.cwd(), 'public');
   app.use(express.static(publicDir, { index: false }));
 
-  // ---- Admin Panel Web Application (SPA) -----------------------------------
+  // ---- Admin Panel Web Application (SPA) mounted strictly at /gs-admin -----
   const adminPublicDir = path.join(process.cwd(), 'public', 'admin');
-  app.use('/admin', express.static(adminPublicDir));
-  app.get('/admin/*', (_req: Request, res: Response) => {
+  app.use('/gs-admin', express.static(adminPublicDir));
+  app.get('/gs-admin', (_req: Request, res: Response) => {
+    res.sendFile(path.join(adminPublicDir, 'index.html'));
+  });
+  app.get('/gs-admin/*', (_req: Request, res: Response) => {
     res.sendFile(path.join(adminPublicDir, 'index.html'));
   });
 
@@ -88,33 +91,31 @@ export function createApp(): Application {
     }
 
     if (!token) {
-      if (req.accepts('html')) {
-        return res.redirect('/admin');
-      }
-      return res.status(401).json({
+      res.status(401).json({
         success: false,
         message: 'Unauthorized. Admin login required to access API documentation.',
       });
+      return;
     }
 
     try {
       const payload = verifyAccessToken(token);
       const admin = await adminRepository.findById(payload.sub);
       if (!admin || !admin.isActive) {
-        if (req.accepts('html')) return res.redirect('/admin');
-        return res.status(401).json({
+        res.status(401).json({
           success: false,
           message: 'Unauthorized. Inactive or invalid admin account.',
         });
+        return;
       }
       req.admin = { id: admin.id, email: admin.email, role: admin.role };
       next();
     } catch (_err) {
-      if (req.accepts('html')) return res.redirect('/admin');
-      return res.status(401).json({
+      res.status(401).json({
         success: false,
         message: 'Unauthorized. Invalid or expired token.',
       });
+      return;
     }
   };
 

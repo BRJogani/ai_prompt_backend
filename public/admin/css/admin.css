@@ -919,35 +919,34 @@ input:checked + .slider:before {
   transform: translateX(16px);
 }
 
-/* Staggered Masonry Waterfall Prompt Grid */
+/* Responsive / Adjustable Prompt Grid (Default 4 Columns) */
 .prompts-grid {
-  column-count: 4;
-  column-gap: 18px;
+  display: grid;
+  grid-template-columns: repeat(var(--prompts-grid-cols, 4), minmax(0, 1fr));
+  gap: 18px;
   padding: 18px;
-  display: block;
 }
 
-@media (max-width: 1500px) {
+@media (max-width: 1400px) {
   .prompts-grid {
-    column-count: 3;
+    grid-template-columns: repeat(min(var(--prompts-grid-cols, 4), 3), minmax(0, 1fr));
   }
 }
 
-@media (max-width: 1050px) {
+@media (max-width: 950px) {
   .prompts-grid {
-    column-count: 2;
+    grid-template-columns: repeat(min(var(--prompts-grid-cols, 4), 2), minmax(0, 1fr));
   }
 }
 
-@media (max-width: 650px) {
+@media (max-width: 600px) {
   .prompts-grid {
-    column-count: 1;
+    grid-template-columns: 1fr;
   }
 }
 
 .prompt-grid-item {
-  break-inside: avoid;
-  margin-bottom: 18px;
+  margin-bottom: 0;
   background: var(--bg-card);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-lg);
