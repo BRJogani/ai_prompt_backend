@@ -113,8 +113,12 @@ const PLACEMENT_DEFS = [
     intervalLabel: 'Prompt Clicks Interval',
     intervalUnit: 'CLICKS',
     intervalBadge: 'Every N Clicks',
-    intervalDesc: 'Triggers full-screen interstitial ad after every <strong>N</strong> prompt clicks (e.g., 3 = triggers on 3rd, 6th, 9th prompt click).',
-    defaultInterval: 3,
+    intervalDesc: 'Triggers full-screen interstitial ad after every <strong>N</strong> prompt clicks (e.g., 1 = triggers on every click, 2 = every 2nd click).',
+    defaultInterval: 1,
+    hasStartAfter: true,
+    startAfterLabel: 'Start After Clicks (Install Threshold)',
+    startAfterDesc: 'Wait until the user has clicked this many prompts after installing the app before showing any interstitial ad. (e.g., 5 = first 5 clicks are 100% ad-free; 0 = start immediately).',
+    defaultStartAfter: 0,
   },
 ];
 
@@ -171,6 +175,9 @@ async function fetchAndRenderAdPlacements(container) {
       const interval = (existing.frequencyValue !== undefined && existing.frequencyValue !== null && existing.frequencyValue > 0)
         ? existing.frequencyValue
         : (def.defaultInterval || 3);
+      const startAfterClicks = (existing.startAfterClicks !== undefined && existing.startAfterClicks !== null)
+        ? existing.startAfterClicks
+        : (def.defaultStartAfter || 0);
 
       return `
         <div class="card ad-placement-card" data-type="${def.type}" data-id="${existing.id || ''}" style="display: flex; flex-direction: column; justify-content: space-between; gap: 18px; padding: 22px; border: 1px solid rgba(255, 255, 255, 0.08); background: rgba(15, 23, 42, 0.65);">
@@ -244,6 +251,37 @@ async function fetchAndRenderAdPlacements(container) {
               `
                   : ''
               }
+
+              ${
+                def.hasStartAfter
+                  ? `
+                <div>
+                  <label style="font-size: 0.78rem; font-weight: 600; color: #cbd5e1; display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+                    <span>${def.startAfterLabel || 'Start After Clicks'}</span>
+                    <span style="font-size: 0.72rem; color: #38bdf8; background: rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.3); padding: 2px 8px; border-radius: 4px; font-weight: 700;">Initial Threshold</span>
+                  </label>
+                  <div style="position: relative; display: flex; align-items: center;">
+                    <input
+                      type="number"
+                      id="ad-start-after-${def.type}"
+                      class="input"
+                      style="width: 100%; font-weight: 700; font-size: 0.95rem; background: rgba(0,0,0,0.3); border: 1px solid rgba(56, 189, 248, 0.4); color: #38bdf8; padding-right: 90px;"
+                      value="${startAfterClicks ?? 0}"
+                      min="0"
+                      max="1000"
+                      placeholder="0"
+                    />
+                    <span style="position: absolute; right: 12px; font-size: 0.75rem; font-weight: 700; color: #38bdf8; pointer-events: none; text-transform: uppercase; letter-spacing: 0.5px;">
+                      CLICKS
+                    </span>
+                  </div>
+                  <div style="font-size: 0.73rem; color: #94a3b8; margin-top: 5px; line-height: 1.4;">
+                    ${def.startAfterDesc || ''}
+                  </div>
+                </div>
+              `
+                  : ''
+              }
             </div>
           </div>
 
@@ -280,6 +318,7 @@ async function savePlacementCard(container, adType, buttonEl) {
   const unitInput = container.querySelector(`#ad-unit-${adType}`);
   const enableInput = container.querySelector(`#ad-enable-${adType}`);
   const intervalInput = container.querySelector(`#ad-interval-${adType}`);
+  const startAfterInput = container.querySelector(`#ad-start-after-${adType}`);
 
   if (!unitInput) return;
 
@@ -287,6 +326,7 @@ async function savePlacementCard(container, adType, buttonEl) {
   const adUnitId = unitInput.value.trim() || def.defaultUnitId || '';
   const enabled = enableInput ? enableInput.checked : true;
   const frequencyValue = intervalInput ? parseInt(intervalInput.value || String(def.defaultInterval || '3'), 10) : (def.defaultInterval || 0);
+  const startAfterClicks = startAfterInput ? parseInt(startAfterInput.value || '0', 10) : 0;
 
   if (buttonEl) {
     buttonEl.disabled = true;
@@ -302,6 +342,7 @@ async function savePlacementCard(container, adType, buttonEl) {
       enabled,
       frequencyType: (adType === 'INTERSTITIAL' || adType === 'NATIVE') ? 'EVERY_N_ACTIONS' : 'MANUAL',
       frequencyValue,
+      startAfterClicks,
     };
 
     await api.upsertAdConfig(payload);
@@ -352,10 +393,12 @@ async function saveAllPlacements(container) {
       const unitInput = container.querySelector(`#ad-unit-${def.type}`);
       const enableInput = container.querySelector(`#ad-enable-${def.type}`);
       const intervalInput = container.querySelector(`#ad-interval-${def.type}`);
+      const startAfterInput = container.querySelector(`#ad-start-after-${def.type}`);
 
       const adUnitId = unitInput ? unitInput.value.trim() : def.defaultUnitId;
       const enabled = enableInput ? enableInput.checked : true;
       const frequencyValue = intervalInput ? parseInt(intervalInput.value || String(def.defaultInterval || '3'), 10) : (def.defaultInterval || 0);
+      const startAfterClicks = startAfterInput ? parseInt(startAfterInput.value || '0', 10) : 0;
 
       return api.upsertAdConfig({
         adType: def.type,
@@ -364,6 +407,7 @@ async function saveAllPlacements(container) {
         enabled,
         frequencyType: (def.type === 'INTERSTITIAL' || def.type === 'NATIVE') ? 'EVERY_N_ACTIONS' : 'MANUAL',
         frequencyValue,
+        startAfterClicks,
       });
     });
 

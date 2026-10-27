@@ -430,6 +430,7 @@ model AdConfig {
 
   frequencyType   AdFrequencyType @default(MANUAL) @map("frequency_type")
   frequencyValue  Int             @default(0) @map("frequency_value")
+  startAfterClicks Int            @default(0) @map("start_after_clicks")
   cooldownSeconds Int             @default(0) @map("cooldown_seconds")
   maxPerSession   Int             @default(0) @map("max_per_session")
 

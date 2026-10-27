@@ -13,6 +13,7 @@ export const createAdConfigSchema = z.object({
   enabled: z.boolean().optional(),
   frequencyType: frequencyTypeEnum.optional(),
   frequencyValue: z.number().int().min(0).optional(),
+  startAfterClicks: z.number().int().min(0).optional(),
   cooldownSeconds: z.number().int().min(0).optional(),
   maxPerSession: z.number().int().min(0).optional(),
   showOnHome: z.boolean().optional(),
