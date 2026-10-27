@@ -919,11 +919,11 @@ input:checked + .slider:before {
   transform: translateX(16px);
 }
 
-/* Staggered Masonry Waterfall Prompt Grid (Adjustable Columns) */
+/* Prompt Cards Grid (Adjustable Columns) */
 .prompts-grid {
-  display: block !important;
-  column-count: var(--prompts-grid-cols, 4) !important;
-  column-gap: 16px !important;
+  display: grid !important;
+  grid-template-columns: repeat(var(--prompts-grid-cols, 4), minmax(0, 1fr)) !important;
+  gap: 16px !important;
   padding: 16px;
   width: 100%;
   box-sizing: border-box;
@@ -931,18 +931,16 @@ input:checked + .slider:before {
 
 @media (max-width: 550px) {
   .prompts-grid {
-    column-count: 1 !important;
+    grid-template-columns: 1fr !important;
   }
 }
 
 .prompt-grid-item {
-  display: inline-block !important;
+  display: flex !important;
+  flex-direction: column !important;
   width: 100% !important;
-  margin-bottom: 16px !important;
-  break-inside: avoid !important;
-  page-break-inside: avoid;
-  box-sizing: border-box;
   min-width: 0;
+  box-sizing: border-box;
   background: var(--bg-card);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-lg);
@@ -960,22 +958,21 @@ input:checked + .slider:before {
 .prompt-grid-thumb {
   position: relative;
   width: 100%;
-  aspect-ratio: auto;
+  aspect-ratio: 1 / 1;
   overflow: hidden;
   background: #090d16;
 }
 
 .prompt-grid-thumb img {
   width: 100%;
-  height: auto;
-  max-height: 520px;
+  height: 100%;
   display: block;
   object-fit: cover;
   transition: transform 0.3s ease;
 }
 
 .prompt-grid-item:hover .prompt-grid-thumb img {
-  transform: scale(1.03);
+  transform: scale(1.04);
 }
 
 .prompt-grid-body {
@@ -983,12 +980,14 @@ input:checked + .slider:before {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  flex: 1;
+  justify-content: space-between;
 }
 
 .prompt-grid-footer {
   border-top: 1px solid rgba(255, 255, 255, 0.08);
   padding-top: 8px;
-  margin-top: 2px;
+  margin-top: auto;
   display: flex;
   align-items: center;
   justify-content: space-between;

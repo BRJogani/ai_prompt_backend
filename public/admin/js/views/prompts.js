@@ -178,8 +178,8 @@ export async function renderPrompts(container, router, options = {}) {
           </table>
         </div>
 
-        <!-- Cards Grid View Container (Staggered Masonry) -->
-        <div id="prompts-grid-container" class="prompts-grid" style="${state.viewMode === 'grid' ? 'display: block;' : 'display: none;'} --prompts-grid-cols: ${state.gridCols};">
+        <!-- Cards Grid View Container -->
+        <div id="prompts-grid-container" class="prompts-grid" style="${state.viewMode === 'grid' ? 'display: grid;' : 'display: none;'} --prompts-grid-cols: ${state.gridCols};">
           <div style="text-align: center; padding: 40px; color: var(--text-muted); grid-column: 1 / -1;">Loading prompt grid...</div>
         </div>
 
@@ -310,7 +310,7 @@ export async function renderPrompts(container, router, options = {}) {
       const gridWrap = container.querySelector('#prompts-grid-container');
       if (tableWrap) tableWrap.style.display = 'none';
       if (gridWrap) {
-        gridWrap.style.display = 'block';
+        gridWrap.style.display = 'grid';
         gridWrap.style.setProperty('--prompts-grid-cols', state.gridCols);
       }
       if (colsControl) colsControl.style.display = 'inline-flex';
@@ -720,18 +720,17 @@ function renderPromptGridCardHtml(p) {
           <span>👁️ ${viewCount}</span>
           <span>❤️ ${favoriteCount}</span>
         </div>
-          <div class="prompt-grid-footer">
-            <button class="btn btn-sm toggle-pin-action-btn ${isPinned ? 'btn-warning' : 'btn-secondary'}" data-id="${p.id}" title="${isPinned ? 'Currently Top #' + pinRank + '. Click to unpin.' : 'Pin this image to show at top'}" style="font-size: 0.74rem; font-weight: 600; padding: 3px 8px;">
-              ${isPinned ? '⭐ Top #' + pinRank : '📌 Pin'}
+        <div class="prompt-grid-footer">
+          <button class="btn btn-sm toggle-pin-action-btn ${isPinned ? 'btn-warning' : 'btn-secondary'}" data-id="${p.id}" title="${isPinned ? 'Currently Top #' + pinRank + '. Click to unpin.' : 'Pin this image to show at top'}" style="font-size: 0.74rem; font-weight: 600; padding: 3px 8px;">
+            ${isPinned ? '⭐ Top #' + pinRank : '📌 Pin'}
+          </button>
+          <div style="display: inline-flex; gap: 6px;">
+            <button class="btn btn-secondary btn-sm edit-prompt-btn" data-id="${p.id}" title="Edit Full-Screen" style="padding: 3px 7px;">
+              <i data-lucide="edit-3" style="width: 14px; height: 14px;"></i>
             </button>
-            <div style="display: inline-flex; gap: 6px;">
-              <button class="btn btn-secondary btn-sm edit-prompt-btn" data-id="${p.id}" title="Edit Full-Screen" style="padding: 3px 7px;">
-                <i data-lucide="edit-3" style="width: 14px; height: 14px;"></i>
-              </button>
-              <button class="btn btn-danger btn-sm delete-prompt-btn" data-id="${p.id}" title="Delete Prompt" style="padding: 3px 7px;">
-                <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i>
-              </button>
-            </div>
+            <button class="btn btn-danger btn-sm delete-prompt-btn" data-id="${p.id}" title="Delete Prompt" style="padding: 3px 7px;">
+              <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i>
+            </button>
           </div>
         </div>
       </div>
