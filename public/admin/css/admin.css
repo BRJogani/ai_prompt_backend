@@ -919,11 +919,11 @@ input:checked + .slider:before {
   transform: translateX(16px);
 }
 
-/* Responsive / Adjustable Prompt Grid (Default 4 Columns) */
+/* Staggered Masonry Waterfall Prompt Grid (Adjustable Columns) */
 .prompts-grid {
-  display: grid !important;
-  grid-template-columns: repeat(var(--prompts-grid-cols, 4), minmax(0, 1fr)) !important;
-  gap: 16px;
+  display: block !important;
+  column-count: var(--prompts-grid-cols, 4) !important;
+  column-gap: 16px !important;
   padding: 16px;
   width: 100%;
   box-sizing: border-box;
@@ -931,19 +931,22 @@ input:checked + .slider:before {
 
 @media (max-width: 550px) {
   .prompts-grid {
-    grid-template-columns: 1fr !important;
+    column-count: 1 !important;
   }
 }
 
 .prompt-grid-item {
+  display: inline-block !important;
+  width: 100% !important;
+  margin-bottom: 16px !important;
+  break-inside: avoid !important;
+  page-break-inside: avoid;
+  box-sizing: border-box;
   min-width: 0;
-  margin-bottom: 0;
   background: var(--bg-card);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-lg);
   overflow: hidden;
-  display: flex;
-  flex-direction: column;
   transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
@@ -976,27 +979,16 @@ input:checked + .slider:before {
 }
 
 .prompt-grid-body {
-  padding: 14px;
+  padding: 12px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  flex: 1;
-  justify-content: space-between;
-}
-
-.prompt-grid-text {
-  font-size: 0.86rem;
-  color: var(--text-primary);
-  line-height: 1.45;
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
+  gap: 8px;
 }
 
 .prompt-grid-footer {
   border-top: 1px solid rgba(255, 255, 255, 0.08);
-  padding-top: 10px;
+  padding-top: 8px;
+  margin-top: 2px;
   display: flex;
   align-items: center;
   justify-content: space-between;

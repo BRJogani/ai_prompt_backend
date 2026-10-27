@@ -164,7 +164,7 @@ export async function renderPrompts(container, router, options = {}) {
             <thead>
               <tr>
                 <th style="width: 60px;">Preview</th>
-                <th>Prompt Text & Category</th>
+                <th>Category & Slug</th>
                 <th>Format</th>
                 <th>Status</th>
                 <th>Copy & Interaction Counters</th>
@@ -178,8 +178,8 @@ export async function renderPrompts(container, router, options = {}) {
           </table>
         </div>
 
-        <!-- Cards Grid View Container -->
-        <div id="prompts-grid-container" class="prompts-grid" style="${state.viewMode === 'grid' ? '' : 'display: none;'} --prompts-grid-cols: ${state.gridCols};">
+        <!-- Cards Grid View Container (Staggered Masonry) -->
+        <div id="prompts-grid-container" class="prompts-grid" style="${state.viewMode === 'grid' ? 'display: block;' : 'display: none;'} --prompts-grid-cols: ${state.gridCols};">
           <div style="text-align: center; padding: 40px; color: var(--text-muted); grid-column: 1 / -1;">Loading prompt grid...</div>
         </div>
 
@@ -310,7 +310,7 @@ export async function renderPrompts(container, router, options = {}) {
       const gridWrap = container.querySelector('#prompts-grid-container');
       if (tableWrap) tableWrap.style.display = 'none';
       if (gridWrap) {
-        gridWrap.style.display = 'grid';
+        gridWrap.style.display = 'block';
         gridWrap.style.setProperty('--prompts-grid-cols', state.gridCols);
       }
       if (colsControl) colsControl.style.display = 'inline-flex';
@@ -625,12 +625,11 @@ function renderPromptRowHtml(p) {
         <img src="${thumbUrl}" class="thumbnail-preview prompt-thumbnail-click" alt="${safeTitle}" data-full-url="${thumbUrl}" data-title="${safeTitle}" title="Click to view full uncropped image" onerror="this.src='https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=100'" />
       </td>
       <td>
-        <div style="font-weight: 500; color: #f1f5f9; font-size: 0.88rem; line-height: 1.45; max-width: 440px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;" title="${promptSnippet}">
-          ${p.isPremium ? '<span style="color: #fbbf24; margin-right: 4px;" title="Premium Prompt">★</span>' : ''}${promptSnippet}
+        <div style="font-weight: 600; color: #f8fafc; font-size: 0.92rem;">
+          <span style="color: var(--accent-cyan);">${p.category ? p.category.name : 'Uncategorized'}</span>
+          ${p.isPremium ? '<span style="color: #fbbf24; margin-left: 4px;" title="Premium">★</span>' : ''}
         </div>
-        <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 3px;">
-          <span style="color: var(--accent-cyan); font-weight: 600;">${p.category ? p.category.name : 'Uncategorized'}</span> &bull; /${p.slug}
-        </div>
+        <div style="font-size: 0.76rem; color: var(--text-muted); margin-top: 3px;">/${p.slug}</div>
       </td>
       <td>
         <div style="display: flex; gap: 4px; flex-wrap: wrap;">
@@ -712,21 +711,15 @@ function renderPromptGridCardHtml(p) {
         </div>
       </div>
       <div class="prompt-grid-body">
-        <div>
-          <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px;">
-            <span style="font-size: 0.74rem; color: var(--accent-cyan); font-weight: 600;">${p.category ? p.category.name : 'Uncategorized'}</span>
-            <span style="font-size: 0.74rem; color: ${p.isTrending ? '#34d399' : 'var(--text-muted)'}; font-weight: 600;">${trendingScore} ${p.isTrending ? '🔥' : ''}</span>
-          </div>
-          <p class="prompt-grid-text" title="${promptSnippet}">
-            ${p.isPremium ? '<span style="color: #fbbf24; margin-right: 3px;" title="Premium Prompt">★</span>' : ''}${promptSnippet}
-          </p>
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+          <span style="font-size: 0.74rem; color: var(--accent-cyan); font-weight: 600;">${p.category ? p.category.name : 'Uncategorized'}</span>
+          <span style="font-size: 0.74rem; color: ${p.isTrending ? '#34d399' : 'var(--text-muted)'}; font-weight: 600;">${trendingScore} ${p.isTrending ? '🔥' : ''}</span>
         </div>
-        <div>
-          <div style="display: flex; gap: 8px; align-items: center; font-size: 0.74rem; color: var(--text-muted); margin-bottom: 8px;">
-            <span class="badge badge-purple" style="font-size: 0.68rem;">📋 ${copyCount} copies</span>
-            <span>👁️ ${viewCount}</span>
-            <span>❤️ ${favoriteCount}</span>
-          </div>
+        <div style="display: flex; gap: 8px; align-items: center; font-size: 0.74rem; color: var(--text-muted);">
+          <span class="badge badge-purple" style="font-size: 0.68rem;">📋 ${copyCount} copies</span>
+          <span>👁️ ${viewCount}</span>
+          <span>❤️ ${favoriteCount}</span>
+        </div>
           <div class="prompt-grid-footer">
             <button class="btn btn-sm toggle-pin-action-btn ${isPinned ? 'btn-warning' : 'btn-secondary'}" data-id="${p.id}" title="${isPinned ? 'Currently Top #' + pinRank + '. Click to unpin.' : 'Pin this image to show at top'}" style="font-size: 0.74rem; font-weight: 600; padding: 3px 8px;">
               ${isPinned ? '⭐ Top #' + pinRank : '📌 Pin'}
