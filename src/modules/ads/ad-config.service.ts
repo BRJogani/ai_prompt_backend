@@ -13,6 +13,7 @@ interface AdConfigInput {
   enabled?: boolean;
   frequencyType?: 'EVERY_N_ACTIONS' | 'EVERY_N_MINUTES' | 'ON_SCREEN_OPEN' | 'MANUAL';
   frequencyValue?: number;
+  startAfterClicks?: number;
   cooldownSeconds?: number;
   maxPerSession?: number;
   showOnHome?: boolean;
