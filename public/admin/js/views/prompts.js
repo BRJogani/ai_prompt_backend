@@ -164,7 +164,7 @@ export async function renderPrompts(container, router, options = {}) {
             <thead>
               <tr>
                 <th style="width: 60px;">Preview</th>
-                <th>Prompt Title & Category</th>
+                <th>Prompt Text & Category</th>
                 <th>Format</th>
                 <th>Status</th>
                 <th>Copy & Interaction Counters</th>
@@ -398,8 +398,8 @@ async function fetchTopPinnedPrompts(container, router) {
               </div>
               <div style="padding: 10px; display: flex; flex-direction: column; gap: 8px; flex: 1; justify-content: space-between;">
                 <div>
-                  <div style="font-size: 0.83rem; font-weight: 600; color: #f8fafc; line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;" title="${safeTitle}">
-                    ${p.title || 'Untitled Prompt'}
+                  <div style="font-size: 0.83rem; font-weight: 500; color: #f8fafc; line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;" title="${escapeHtml(p.promptText || p.title || 'Prompt')}">
+                    ${escapeHtml(p.promptText || p.title || 'Prompt')}
                   </div>
                   <div style="font-size: 0.72rem; color: #94a3b8; margin-top: 3px;">
                     ${p.category ? p.category.name : 'Uncategorized'}
@@ -617,6 +617,7 @@ function renderPromptRowHtml(p) {
   const isPinned = state.pinnedIds.includes(p.id);
   const pinRank = isPinned ? state.pinnedIds.indexOf(p.id) + 1 : 0;
   const isPublished = p.status === 'PUBLISHED';
+  const promptSnippet = escapeHtml(p.promptText || p.title || 'No prompt script entered');
 
   return `
     <tr data-id="${p.id}">
@@ -624,10 +625,12 @@ function renderPromptRowHtml(p) {
         <img src="${thumbUrl}" class="thumbnail-preview prompt-thumbnail-click" alt="${safeTitle}" data-full-url="${thumbUrl}" data-title="${safeTitle}" title="Click to view full uncropped image" onerror="this.src='https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=100'" />
       </td>
       <td>
-        <div style="font-weight: 600; color: #f8fafc; font-size: 0.95rem; line-height: 1.4; max-width: 440px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;" title="${safeTitle}">
-          ${p.isPremium ? '<span style="color: #fbbf24; margin-right: 4px;" title="Premium Prompt">★</span>' : ''}${p.title || 'Untitled Prompt'}
+        <div style="font-weight: 500; color: #f1f5f9; font-size: 0.88rem; line-height: 1.45; max-width: 440px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;" title="${promptSnippet}">
+          ${p.isPremium ? '<span style="color: #fbbf24; margin-right: 4px;" title="Premium Prompt">★</span>' : ''}${promptSnippet}
         </div>
-        <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 2px;">${p.category ? p.category.name : 'Uncategorized'} &bull; /${p.slug}</div>
+        <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 3px;">
+          <span style="color: var(--accent-cyan); font-weight: 600;">${p.category ? p.category.name : 'Uncategorized'}</span> &bull; /${p.slug}
+        </div>
       </td>
       <td>
         <div style="display: flex; gap: 4px; flex-wrap: wrap;">
@@ -710,15 +713,12 @@ function renderPromptGridCardHtml(p) {
       </div>
       <div class="prompt-grid-body">
         <div>
-          <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 4px;">
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px;">
             <span style="font-size: 0.74rem; color: var(--accent-cyan); font-weight: 600;">${p.category ? p.category.name : 'Uncategorized'}</span>
             <span style="font-size: 0.74rem; color: ${p.isTrending ? '#34d399' : 'var(--text-muted)'}; font-weight: 600;">${trendingScore} ${p.isTrending ? '🔥' : ''}</span>
           </div>
-          <div style="font-size: 0.88rem; font-weight: 600; color: #f8fafc; line-height: 1.35; margin-bottom: 6px; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden;" title="${safeTitle}">
-            ${p.isPremium ? '<span style="color: #fbbf24; margin-right: 3px;">★</span>' : ''}${p.title || 'Untitled'}
-          </div>
           <p class="prompt-grid-text" title="${promptSnippet}">
-            ${promptSnippet}
+            ${p.isPremium ? '<span style="color: #fbbf24; margin-right: 3px;" title="Premium Prompt">★</span>' : ''}${promptSnippet}
           </p>
         </div>
         <div>
