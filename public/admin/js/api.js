@@ -171,13 +171,40 @@ export const api = {
   registerAdmin: (data) => apiRequest('/admin/auth/register-admin', { method: 'POST', body: JSON.stringify(data) }),
 
   // Phase 9: Dashboard & Analytics
-  getDashboardOverview: () => apiRequest('/admin/dashboard/overview'),
-  getTopPrompts: (metric = 'viewCount', limit = 10) => apiRequest(`/admin/dashboard/top-prompts?metric=${metric}&limit=${limit}`),
-  getTopCategories: (limit = 10) => apiRequest(`/admin/dashboard/top-categories?limit=${limit}`),
-  getEventsTimeseries: (range = '30d', eventType) => {
+  getDashboardOverview: (params = {}) => {
+    const q = new URLSearchParams(params).toString();
+    return apiRequest(`/admin/dashboard/overview${q ? '?' + q : ''}`);
+  },
+  getTopPrompts: (metric = 'viewCount', limit = 10, range = 'today', from, to) => {
+    const params = new URLSearchParams({ metric, limit, range });
+    if (from) params.set('from', from);
+    if (to) params.set('to', to);
+    return apiRequest(`/admin/dashboard/top-prompts?${params.toString()}`);
+  },
+  getTopCategories: (limit = 10, range = 'today', from, to) => {
+    const params = new URLSearchParams({ limit, range });
+    if (from) params.set('from', from);
+    if (to) params.set('to', to);
+    return apiRequest(`/admin/dashboard/top-categories?${params.toString()}`);
+  },
+  getEventsTimeseries: (range = 'today', eventType, from, to) => {
     const params = new URLSearchParams({ range });
     if (eventType) params.set('eventType', eventType);
+    if (from) params.set('from', from);
+    if (to) params.set('to', to);
     return apiRequest(`/admin/dashboard/timeseries?${params.toString()}`);
+  },
+  getDauTimeseries: (range = 'today', from, to) => {
+    const params = new URLSearchParams({ range });
+    if (from) params.set('from', from);
+    if (to) params.set('to', to);
+    return apiRequest(`/admin/dashboard/dau-timeseries?${params.toString()}`);
+  },
+  getEngagementStats: (range = 'today', from, to) => {
+    const params = new URLSearchParams({ range });
+    if (from) params.set('from', from);
+    if (to) params.set('to', to);
+    return apiRequest(`/admin/dashboard/engagement?${params.toString()}`);
   },
   recalculateTrending: () => apiRequest('/admin/analytics/recalculate-trending', { method: 'POST' }),
 
@@ -188,6 +215,7 @@ export const api = {
   },
   getReport: (id) => apiRequest(`/admin/reports/${id}`),
   updateReportStatus: (id, status) => apiRequest(`/admin/reports/${id}/status`, { method: 'PATCH', body: JSON.stringify({ status }) }),
+  updateReportPromptStatus: (id, status) => apiRequest(`/admin/reports/${id}/prompt-status`, { method: 'PATCH', body: JSON.stringify({ status }) }),
 
   // Phase 9: Admin User Management
   getAdminUsers: (params = {}) => {

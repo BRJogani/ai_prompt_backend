@@ -1,4 +1,5 @@
 import { ContentType } from '@prisma/client';
+import { prisma } from '@config/database';
 import { PromptSortOption } from './prompt.repository';
 import { findPublicPromptsWithVideoGate, findPublicPromptByIdWithVideoGate } from './prompt-visibility.service';
 import { NotFoundError } from '@utils/ApiError';
@@ -66,7 +67,32 @@ export const publicPromptService = {
   async getById(id: string) {
     const prompt = await findPublicPromptByIdWithVideoGate(id);
     if (!prompt) throw new NotFoundError('Prompt not found');
-    return prompt;
+
+    const matchingPrompts = await prisma.prompt.findMany({
+      where: {
+        promptText: prompt.promptText,
+        status: 'PUBLISHED',
+        OR: [{ deletedAt: null }, { deletedAt: { isSet: false } }],
+      },
+      select: {
+        category: true,
+      },
+    });
+
+    const categoryMap = new Map<string, any>();
+    if (prompt.category) {
+      categoryMap.set(prompt.category.id, prompt.category);
+    }
+    for (const m of matchingPrompts) {
+      if (m.category) {
+        categoryMap.set(m.category.id, m.category);
+      }
+    }
+
+    return {
+      ...prompt,
+      categories: Array.from(categoryMap.values()),
+    };
   },
 };
 

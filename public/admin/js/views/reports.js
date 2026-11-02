@@ -107,10 +107,11 @@ async function loadReportsData(container, app) {
       <table class="data-table">
         <thead>
           <tr>
-            <th>Status</th>
+            <th>Report Status</th>
             <th>Reason</th>
             <th>Description & Context</th>
             <th>Reported Prompt</th>
+            <th>Prompt Status</th>
             <th>Reported At</th>
             <th style="text-align: right;">Actions</th>
           </tr>
@@ -120,19 +121,30 @@ async function loadReportsData(container, app) {
             <tr>
               <td>${getStatusBadge(report.status)}</td>
               <td>${getReasonLabel(report.reason)}</td>
-              <td style="max-width: 280px;">
+              <td style="max-width: 260px;">
                 <div style="font-size: 0.875rem; color: #f1f5f9; font-weight: 500; margin-bottom: 2px;">
-                  ${report.description ? report.description : '<span style="color: var(--text-muted); font-style: italic;">No extra details provided</span>'}
+                  ${report.description ? escapeHtml(report.description) : '<span style="color: var(--text-muted); font-style: italic;">No extra details provided</span>'}
                 </div>
                 <div style="font-size: 0.75rem; color: var(--text-muted);">
                   User ID: <code style="font-size: 0.72rem; color: #94a3b8;">${report.userId || 'Anonymous'}</code>
                 </div>
               </td>
               <td>
-                <div style="display: flex; align-items: center; gap: 8px;">
-                  <button class="btn btn-secondary btn-sm open-prompt-btn" data-prompt-id="${report.promptId}" title="Open Prompt in Editor">
-                    <i data-lucide="external-link" style="width: 13px; height: 13px;"></i> View Prompt
-                  </button>
+                <div style="font-weight: 600; font-size: 0.85rem; color: #fff; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-bottom: 4px;" title="${escapeHtml(report.prompt?.title || '')}">
+                  ${escapeHtml(report.prompt?.title || ('Prompt #' + (report.promptId ? report.promptId.slice(-6) : '')))}
+                </div>
+                <button class="btn btn-secondary btn-sm open-prompt-btn" data-prompt-id="${report.promptId}" title="Open Prompt in Editor" style="padding: 2px 8px; font-size: 0.75rem;">
+                  <i data-lucide="external-link" style="width: 12px; height: 12px;"></i> View Prompt
+                </button>
+              </td>
+              <td>
+                <div style="display: flex; align-items: center; gap: 6px;">
+                  <select class="input-select prompt-status-select" data-report-id="${report.id}" data-prompt-id="${report.promptId}" style="width: auto; padding: 4px 8px; font-size: 0.75rem; border-radius: 6px; background: rgba(15, 23, 42, 0.8); border: 1px solid var(--border-color); color: ${report.prompt?.status === 'PUBLISHED' ? '#34d399' : (report.prompt?.status === 'ARCHIVED' ? '#f87171' : '#f59e0b')}; font-weight: 700;">
+                    <option value="PUBLISHED" ${report.prompt?.status === 'PUBLISHED' ? 'selected' : ''}>PUBLISHED</option>
+                    <option value="DRAFT" ${report.prompt?.status === 'DRAFT' ? 'selected' : ''}>DRAFT</option>
+                    <option value="REVIEW" ${report.prompt?.status === 'REVIEW' ? 'selected' : ''}>REVIEW</option>
+                    <option value="ARCHIVED" ${report.prompt?.status === 'ARCHIVED' ? 'selected' : ''}>ARCHIVED</option>
+                  </select>
                 </div>
               </td>
               <td style="font-size: 0.8rem; color: var(--text-muted); white-space: nowrap;">
@@ -188,7 +200,30 @@ async function loadReportsData(container, app) {
       btn.addEventListener('click', () => {
         const promptId = btn.getAttribute('data-prompt-id');
         if (promptId && app) {
-          app.navigate('prompt-editor', { promptId });
+          app.navigate('prompt-editor', { promptId, returnTo: 'reports' });
+        }
+      });
+    });
+
+    tableContainer.querySelectorAll('.prompt-status-select').forEach((select) => {
+      select.addEventListener('change', async (e) => {
+        const reportId = select.getAttribute('data-report-id');
+        const promptId = select.getAttribute('data-prompt-id');
+        const newStatus = e.target.value;
+        select.disabled = true;
+        try {
+          if (reportId && typeof api.updateReportPromptStatus === 'function') {
+            await api.updateReportPromptStatus(reportId, newStatus);
+          } else {
+            await api.updatePrompt(promptId, { status: newStatus });
+          }
+          toast.success(`Prompt status changed to ${newStatus}`);
+          select.style.color = newStatus === 'PUBLISHED' ? '#34d399' : (newStatus === 'ARCHIVED' ? '#f87171' : '#f59e0b');
+        } catch (err) {
+          toast.error(err.message || 'Failed to update prompt status');
+          loadReportsData(container, app);
+        } finally {
+          select.disabled = false;
         }
       });
     });
@@ -231,4 +266,14 @@ async function loadReportsData(container, app) {
     `;
     if (window.lucide) window.lucide.createIcons();
   }
+}
+
+function escapeHtml(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
 }

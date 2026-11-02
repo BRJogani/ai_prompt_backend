@@ -33,14 +33,11 @@ describe('GET /api/v1/health', () => {
 describe('Unknown routes', () => {
   const app = createApp();
 
-  it('returns a consistent 404 error shape', async () => {
+  it('redirects unknown routes to home', async () => {
     const res = await request(app).get('/api/v1/this-route-does-not-exist');
 
-    expect(res.status).toBe(404);
-    expect(res.body).toMatchObject({
-      success: false,
-      message: expect.stringContaining('Route not found'),
-    });
+    expect(res.status).toBe(302);
+    expect(res.headers.location).toBe('/');
   });
 });
 

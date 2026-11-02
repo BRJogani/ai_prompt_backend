@@ -10,7 +10,7 @@ export const reportRepository = {
     return prisma.report.findUnique({
       where: { id },
       include: {
-        prompt: { select: { id: true, title: true, slug: true } },
+        prompt: { select: { id: true, title: true, slug: true, status: true, contentType: true, promptText: true } },
         user: { select: { id: true, uniqueId: true } },
         reviewedByAdmin: { select: { id: true, name: true, email: true } },
       },
@@ -23,7 +23,7 @@ export const reportRepository = {
     const [items, total] = await Promise.all([
       prisma.report.findMany({
         where,
-        include: { prompt: { select: { id: true, title: true, slug: true } } },
+        include: { prompt: { select: { id: true, title: true, slug: true, status: true, contentType: true, promptText: true } } },
         orderBy: { createdAt: 'desc' },
         skip: (params.page - 1) * params.limit,
         take: params.limit,

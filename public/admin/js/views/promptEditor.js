@@ -2,7 +2,11 @@ import { api } from '../api.js';
 import { toast } from '../toast.js';
 import { modal } from '../modal.js';
 
-export async function renderPromptEditor(container, router, promptId = null) {
+export async function renderPromptEditor(container, router, options = null) {
+  const promptId = (typeof options === 'object' && options !== null) ? options.promptId : options;
+  const returnTo = (typeof options === 'object' && options !== null && options.returnTo) ? options.returnTo : 'prompts';
+  const returnLabel = returnTo === 'reports' ? 'Back to Reports' : 'Back to Prompts';
+
   const isEdit = !!promptId;
   let prompt = null;
   let categories = [];
@@ -30,7 +34,7 @@ export async function renderPromptEditor(container, router, promptId = null) {
     }
   } catch (err) {
     toast.error('Failed to load required editor data');
-    router.navigate('prompts');
+    router.navigate(returnTo);
     return;
   }
 
@@ -40,7 +44,7 @@ export async function renderPromptEditor(container, router, promptId = null) {
       <div class="editor-topbar">
         <div style="display: flex; align-items: center; gap: 16px;">
           <button class="btn btn-secondary btn-sm" id="editor-back-btn">
-            <i data-lucide="arrow-left" style="width: 16px; height: 16px;"></i> Back to Prompts
+            <i data-lucide="arrow-left" style="width: 16px; height: 16px;"></i> ${returnLabel}
           </button>
           <div>
             <h2 style="font-family: 'Outfit', sans-serif; font-size: 1.25rem; font-weight: 700; color: #fff;">
@@ -71,33 +75,54 @@ export async function renderPromptEditor(container, router, promptId = null) {
               Prompt Details
             </div>
 
-
-            <!-- Category & Target Format -->
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
-              <div class="form-group">
-                <label class="form-label" for="editor-category">Category *</label>
-                <select id="editor-category" class="input-select" required>
-                  ${categories.map((c) => `<option value="${c.id}" ${prompt && prompt.categoryId === c.id ? 'selected' : ''}>${c.name}</option>`).join('')}
-                </select>
+            <!-- Category Selection (Supports Multiple Categories) -->
+            <div class="form-group">
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                <label class="form-label" style="margin-bottom: 0;">
+                  Categories * <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: normal;">(Choose one or multiple)</span>
+                </label>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <span id="selected-cat-count" style="font-size: 0.76rem; font-weight: 600; color: #a5b4fc; background: rgba(99, 102, 241, 0.15); padding: 2px 8px; border-radius: 12px; border: 1px solid rgba(99, 102, 241, 0.3);">
+                    ${isEdit ? '1 selected' : '0 selected'}
+                  </span>
+                  <button type="button" id="btn-cat-select-all" class="btn btn-secondary btn-sm" style="padding: 2px 8px; font-size: 0.72rem;">All</button>
+                  <button type="button" id="btn-cat-clear" class="btn btn-secondary btn-sm" style="padding: 2px 8px; font-size: 0.72rem;">Clear</button>
+                </div>
               </div>
 
-              <div class="form-group">
-                <label class="form-label" for="editor-content-type">Target Generation Format</label>
-                <select id="editor-content-type" class="input-select">
-                  <option value="IMAGE" ${!prompt || prompt.contentType === 'IMAGE' ? 'selected' : ''}>IMAGE (Photo / 3D / Illustration)</option>
-                  <option value="VIDEO" ${prompt && prompt.contentType === 'VIDEO' ? 'selected' : ''}>VIDEO (Motion / Cinematic Animation)</option>
-                  <option value="BOTH" ${prompt && prompt.contentType === 'BOTH' ? 'selected' : ''}>BOTH (Image & Video)</option>
-                </select>
+              <div style="margin-bottom: 8px;">
+                <input type="text" id="cat-search-filter" class="input-text" placeholder="Search categories..." style="padding: 6px 12px; font-size: 0.8rem; background: rgba(15, 23, 42, 0.6);" />
+              </div>
+
+              <div id="category-chips-list" style="display: flex; flex-wrap: wrap; gap: 8px; max-height: 160px; overflow-y: auto; padding: 10px; background: rgba(15, 23, 42, 0.8); border: 1px solid var(--border-subtle); border-radius: var(--radius-md);">
+                ${categories.map((c) => {
+                  const isChecked = isEdit ? (prompt && prompt.categoryId === c.id) : false;
+                  return `
+                    <label class="cat-chip-label" data-name="${escapeHtml(c.name.toLowerCase())}" style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 20px; border: 1px solid ${isChecked ? '#6366f1' : 'rgba(255,255,255,0.1)'}; background: ${isChecked ? 'rgba(99, 102, 241, 0.25)' : 'rgba(255,255,255,0.03)'}; color: ${isChecked ? '#fff' : '#cbd5e1'}; cursor: pointer; user-select: none; transition: all 0.2s ease;">
+                      <input type="checkbox" name="editor-category" value="${c.id}" ${isChecked ? 'checked' : ''} style="cursor: pointer; accent-color: #6366f1;" />
+                      <span style="font-size: 0.84rem; font-weight: 500;">${escapeHtml(c.name)}</span>
+                    </label>
+                  `;
+                }).join('')}
               </div>
             </div>
 
-            <!-- Publication Status & Access Tier -->
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+            <!-- Target Format, Publication Status & Access Tier -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px;">
+              <div class="form-group">
+                <label class="form-label" for="editor-content-type">Target Format</label>
+                <select id="editor-content-type" class="input-select">
+                  <option value="IMAGE" ${!prompt || prompt.contentType === 'IMAGE' ? 'selected' : ''}>IMAGE</option>
+                  <option value="VIDEO" ${prompt && prompt.contentType === 'VIDEO' ? 'selected' : ''}>VIDEO</option>
+                  <option value="BOTH" ${prompt && prompt.contentType === 'BOTH' ? 'selected' : ''}>BOTH</option>
+                </select>
+              </div>
+
               <div class="form-group">
                 <label class="form-label" for="editor-status">Publication Status</label>
                 <select id="editor-status" class="input-select">
-                  <option value="PUBLISHED" ${prompt && prompt.status === 'PUBLISHED' ? 'selected' : ''}>PUBLISHED (Live in mobile app)</option>
-                  <option value="DRAFT" ${!prompt || prompt.status === 'DRAFT' ? 'selected' : ''}>DRAFT (Hidden)</option>
+                  <option value="PUBLISHED" ${prompt && prompt.status === 'PUBLISHED' ? 'selected' : ''}>PUBLISHED</option>
+                  <option value="DRAFT" ${!prompt || prompt.status === 'DRAFT' ? 'selected' : ''}>DRAFT</option>
                   <option value="REVIEW" ${prompt && prompt.status === 'REVIEW' ? 'selected' : ''}>REVIEW</option>
                   <option value="ARCHIVED" ${prompt && prompt.status === 'ARCHIVED' ? 'selected' : ''}>ARCHIVED</option>
                 </select>
@@ -106,8 +131,8 @@ export async function renderPromptEditor(container, router, promptId = null) {
               <div class="form-group">
                 <label class="form-label" for="editor-is-premium">Pricing Tier</label>
                 <select id="editor-is-premium" class="input-select">
-                  <option value="false" ${!prompt || !prompt.isPremium ? 'selected' : ''}>FREE (Standard access)</option>
-                  <option value="true" ${prompt && prompt.isPremium ? 'selected' : ''}>PREMIUM (Exclusive tier)</option>
+                  <option value="false" ${!prompt || !prompt.isPremium ? 'selected' : ''}>FREE</option>
+                  <option value="true" ${prompt && prompt.isPremium ? 'selected' : ''}>PREMIUM</option>
                 </select>
               </div>
             </div>
@@ -185,6 +210,52 @@ export async function renderPromptEditor(container, router, promptId = null) {
 
   renderMediaGallery();
 
+  // Multi-category interaction
+  function updateCategorySelectionUi() {
+    const checked = container.querySelectorAll('input[name="editor-category"]:checked');
+    const countEl = container.querySelector('#selected-cat-count');
+    if (countEl) countEl.textContent = `${checked.length} selected`;
+
+    container.querySelectorAll('.cat-chip-label').forEach((label) => {
+      const cb = label.querySelector('input[name="editor-category"]');
+      if (cb && cb.checked) {
+        label.style.border = '1px solid #6366f1';
+        label.style.background = 'rgba(99, 102, 241, 0.25)';
+        label.style.color = '#fff';
+      } else {
+        label.style.border = '1px solid rgba(255,255,255,0.1)';
+        label.style.background = 'rgba(255,255,255,0.03)';
+        label.style.color = '#cbd5e1';
+      }
+    });
+  }
+
+  container.querySelector('#cat-search-filter')?.addEventListener('input', (e) => {
+    const val = e.target.value.toLowerCase().trim();
+    container.querySelectorAll('.cat-chip-label').forEach((label) => {
+      const name = label.getAttribute('data-name') || '';
+      label.style.display = name.includes(val) ? 'inline-flex' : 'none';
+    });
+  });
+
+  container.querySelector('#btn-cat-select-all')?.addEventListener('click', () => {
+    container.querySelectorAll('input[name="editor-category"]').forEach((cb) => {
+      cb.checked = true;
+    });
+    updateCategorySelectionUi();
+  });
+
+  container.querySelector('#btn-cat-clear')?.addEventListener('click', () => {
+    container.querySelectorAll('input[name="editor-category"]').forEach((cb) => {
+      cb.checked = false;
+    });
+    updateCategorySelectionUi();
+  });
+
+  container.querySelectorAll('input[name="editor-category"]').forEach((cb) => {
+    cb.addEventListener('change', updateCategorySelectionUi);
+  });
+
   const priorityToggle = container.querySelector('#editor-is-priority');
   const priorityRankGroup = container.querySelector('#priority-rank-group');
   priorityToggle?.addEventListener('change', (e) => {
@@ -193,8 +264,8 @@ export async function renderPromptEditor(container, router, promptId = null) {
     }
   });
 
-  container.querySelector('#editor-back-btn')?.addEventListener('click', () => router.navigate('prompts'));
-  container.querySelector('#editor-cancel-btn')?.addEventListener('click', () => router.navigate('prompts'));
+  container.querySelector('#editor-back-btn')?.addEventListener('click', () => router.navigate(returnTo));
+  container.querySelector('#editor-cancel-btn')?.addEventListener('click', () => router.navigate(returnTo));
 
   const dropzone = container.querySelector('#media-dropzone');
   const fileInput = container.querySelector('#media-file-input');
@@ -332,7 +403,15 @@ export async function renderPromptEditor(container, router, promptId = null) {
 
   const saveBtn = container.querySelector('#editor-save-btn');
   saveBtn?.addEventListener('click', async () => {
-    const categoryId = container.querySelector('#editor-category').value;
+    const selectedCategoryBoxes = Array.from(container.querySelectorAll('input[name="editor-category"]:checked'));
+    const categoryIds = selectedCategoryBoxes.map((cb) => cb.value);
+
+    if (categoryIds.length === 0) {
+      toast.error('Please select at least one category');
+      return;
+    }
+
+    const categoryId = categoryIds[0];
     const contentType = container.querySelector('#editor-content-type').value;
     const status = container.querySelector('#editor-status').value;
     const promptText = container.querySelector('#editor-prompt-text').value.trim();
@@ -345,17 +424,6 @@ export async function renderPromptEditor(container, router, promptId = null) {
 
     const title = (prompt && prompt.title) || promptText.split('\n')[0].slice(0, 60).trim() || 'Prompt';
 
-    if (!categoryId) {
-      toast.error('Please select a category');
-      return;
-    }
-
-    if (!promptText) {
-      toast.error('Prompt script text is required');
-      container.querySelector('#editor-prompt-text').focus();
-      return;
-    }
-
     const isPremium = container.querySelector('#editor-is-premium')?.value === 'true';
     const isPriority = container.querySelector('#editor-is-priority')?.checked ?? false;
     const sortOrderVal = isPriority ? parseInt(container.querySelector('#editor-sort-order')?.value || '1', 10) : 0;
@@ -364,6 +432,7 @@ export async function renderPromptEditor(container, router, promptId = null) {
     const payload = {
       title,
       categoryId,
+      categoryIds,
       contentType,
       status,
       isPremium,
@@ -377,34 +446,40 @@ export async function renderPromptEditor(container, router, promptId = null) {
     if (window.lucide) window.lucide.createIcons();
 
     try {
-      let savedPromptId = promptId;
-
       if (isEdit) {
         await api.updatePrompt(promptId, payload);
         toast.success('Prompt details updated');
       } else {
         const createRes = await api.createPrompt(payload);
-        savedPromptId = createRes.data.id;
-        toast.success('Prompt created successfully');
-      }
+        const targetIds = (createRes.data && Array.isArray(createRes.data.createdIds))
+          ? createRes.data.createdIds
+          : [createRes.data.id];
 
-      if (newFilesQueue.length > 0 && savedPromptId) {
-        saveBtn.innerHTML = `<i data-lucide="upload-cloud" style="width: 16px; height: 16px; animation: pulse 1s infinite;"></i> Uploading Media (${newFilesQueue.length})...`;
-        if (window.lucide) window.lucide.createIcons();
+        toast.success(
+          targetIds.length > 1
+            ? `Prompt published across ${targetIds.length} categories!`
+            : 'Prompt created successfully'
+        );
 
-        for (let i = 0; i < newFilesQueue.length; i++) {
-          const item = newFilesQueue[i];
-          try {
-            await api.uploadPromptMedia(savedPromptId, item.file);
-            toast.success(`Uploaded visual preview #${i + 1}`);
-          } catch (uploadErr) {
-            toast.error(`Media upload error: ${uploadErr.message}`);
+        if (newFilesQueue.length > 0 && targetIds.length > 0) {
+          saveBtn.innerHTML = `<i data-lucide="upload-cloud" style="width: 16px; height: 16px; animation: pulse 1s infinite;"></i> Uploading Media...`;
+          if (window.lucide) window.lucide.createIcons();
+
+          for (const targetId of targetIds) {
+            for (let i = 0; i < newFilesQueue.length; i++) {
+              const item = newFilesQueue[i];
+              try {
+                await api.uploadPromptMedia(targetId, item.file);
+              } catch (uploadErr) {
+                toast.error(`Media upload error: ${uploadErr.message}`);
+              }
+            }
           }
         }
       }
 
       toast.success('Prompt saved with all visual assets!');
-      router.navigate('prompts', { refresh: true });
+      router.navigate(returnTo, returnTo === 'prompts' ? { refresh: true } : {});
     } catch (err) {
       toast.error(err.message || 'Failed to save prompt');
       saveBtn.disabled = false;

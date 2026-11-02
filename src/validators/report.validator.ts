@@ -16,6 +16,11 @@ export const updateReportStatusSchema = z.object({
 });
 export type UpdateReportStatusInput = z.infer<typeof updateReportStatusSchema>;
 
+export const updateReportPromptStatusSchema = z.object({
+  status: z.enum(['DRAFT', 'REVIEW', 'PUBLISHED', 'ARCHIVED']),
+});
+export type UpdateReportPromptStatusInput = z.infer<typeof updateReportPromptStatusSchema>;
+
 export const reportListQuerySchema = paginationQuerySchema.extend({
   status: statusEnum.optional(),
 });

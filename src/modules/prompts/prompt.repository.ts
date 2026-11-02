@@ -120,7 +120,7 @@ export const promptRepository = {
       prisma.prompt.findMany({
         where,
         include: adminInclude,
-        orderBy: [{ sortOrder: 'asc' }, { createdAt: 'desc' }],
+        orderBy: [{ createdAt: 'desc' }],
         skip: (params.page - 1) * params.limit,
         take: params.limit,
       }),

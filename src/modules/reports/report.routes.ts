@@ -5,7 +5,12 @@ import { authenticate } from '@middleware/authenticate';
 import { authorize } from '@middleware/authorize';
 import { validate } from '@middleware/validate';
 import { DASHBOARD_READ_ROLES, CONTENT_MANAGE_ROLES } from '@constants/roles';
-import { createReportSchema, updateReportStatusSchema, reportListQuerySchema } from '@validators/report.validator';
+import {
+  createReportSchema,
+  updateReportStatusSchema,
+  updateReportPromptStatusSchema,
+  reportListQuerySchema,
+} from '@validators/report.validator';
 import { idParamSchema } from '@validators/common.validator';
 
 /** Mounted at /api/v1/reports. */
@@ -34,6 +39,13 @@ adminReportRouter.patch(
   validate(idParamSchema(), 'params'),
   validate(updateReportStatusSchema),
   reportController.adminUpdateStatus,
+);
+adminReportRouter.patch(
+  '/:id/prompt-status',
+  authorize(...CONTENT_MANAGE_ROLES),
+  validate(idParamSchema(), 'params'),
+  validate(updateReportPromptStatusSchema),
+  reportController.adminUpdatePromptStatus,
 );
 
 export default { publicReportRouter, adminReportRouter };

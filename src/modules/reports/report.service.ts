@@ -1,4 +1,4 @@
-import { ReportReason, ReportStatus } from '@prisma/client';
+import { PromptStatus, ReportReason, ReportStatus } from '@prisma/client';
 import { reportRepository } from './report.repository';
 import { promptRepository } from '@modules/prompts/prompt.repository';
 import { NotFoundError } from '@utils/ApiError';
@@ -42,6 +42,29 @@ export const reportService = {
       entityType: 'Report',
       entityId: id,
       metadata: { status },
+      ipAddress,
+    });
+
+    return updated;
+  },
+
+  /** Moderation action: update prompt status directly from a report. */
+  async updatePromptStatus(id: string, promptStatus: PromptStatus, adminId: string, ipAddress?: string) {
+    const report = await reportRepository.findById(id);
+    if (!report) throw new NotFoundError('Report not found');
+    if (!report.promptId) throw new NotFoundError('Report does not reference an active prompt');
+
+    const updated = await promptRepository.update(report.promptId, {
+      status: promptStatus,
+      publishedAt: promptStatus === 'PUBLISHED' ? new Date() : undefined,
+    });
+
+    await recordAuditLog({
+      adminId,
+      action: AUDIT_ACTIONS.UPDATE_PROMPT,
+      entityType: 'Prompt',
+      entityId: report.promptId,
+      metadata: { status: promptStatus, fromReportId: id },
       ipAddress,
     });
 

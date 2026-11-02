@@ -1,4 +1,5 @@
 import { ContentType, PromptStatus } from '@prisma/client';
+import { prisma } from '@config/database';
 import { promptRepository } from './prompt.repository';
 import { categoryRepository } from '@modules/categories/category.repository';
 import { aiToolRepository } from '@modules/ai-tools/ai-tool.repository';
@@ -13,7 +14,8 @@ interface PromptInput {
   slug?: string;
   description?: string;
   promptText: string;
-  categoryId: string;
+  categoryId?: string;
+  categoryIds?: string[];
   aiToolId?: string;
   contentType?: ContentType;
   status?: PromptStatus;
@@ -50,50 +52,78 @@ async function assertAiToolExists(aiToolId?: string): Promise<void> {
 
 export const promptService = {
   async create(input: PromptInput, adminId: string, ipAddress?: string) {
-    await assertCategoryExists(input.categoryId);
+    const catIds = Array.from(
+      new Set(
+        [
+          ...(input.categoryIds || []),
+          ...(input.categoryId ? [input.categoryId] : []),
+        ].filter(Boolean),
+      ),
+    );
+
+    if (catIds.length === 0) {
+      throw new ValidationError('At least one category is required');
+    }
+
+    for (const cId of catIds) {
+      await assertCategoryExists(cId);
+    }
     await assertAiToolExists(input.aiToolId);
 
     const title = input.title?.trim() || input.promptText.trim().split('\n')[0].slice(0, 60).trim() || 'Prompt';
     const baseSlug = slugify(input.slug ?? title);
     if (!baseSlug) throw new ValidationError('A valid title or slug is required');
-    const slug = await ensureUniqueSlug(baseSlug);
 
     const tags = input.tagSlugs?.length ? await tagService.resolveOrCreateTags(input.tagSlugs) : [];
 
-    const prompt = await promptRepository.create({
-      title,
-      slug,
-      description: input.description,
-      promptText: input.promptText,
-      category: { connect: { id: input.categoryId } },
-      ...(input.aiToolId ? { aiTool: { connect: { id: input.aiToolId } } } : {}),
-      contentType: input.contentType ?? 'IMAGE',
-      status: input.status ?? 'DRAFT',
-      publishedAt: input.status === 'PUBLISHED' ? new Date() : undefined,
-      sortOrder: input.sortOrder ?? 0,
-      isFeatured: input.isFeatured ?? false,
-      isTrending: input.isTrending ?? false,
-      isPremium: input.isPremium ?? false,
-      videoEnabled: input.videoEnabled ?? true,
-      ...(tags.length ? { tags: { create: tags.map((tag) => ({ tagId: tag.id })) } } : {}),
-    });
+    const createdPrompts = [];
+    for (let i = 0; i < catIds.length; i++) {
+      const cId = catIds[i];
+      const slug = await ensureUniqueSlug(i === 0 ? baseSlug : `${baseSlug}-${cId.slice(-4)}`);
 
-    await recordAuditLog({
-      adminId,
-      action: AUDIT_ACTIONS.CREATE_PROMPT,
-      entityType: 'Prompt',
-      entityId: prompt.id,
-      ipAddress,
-    });
+      const prompt = await promptRepository.create({
+        title,
+        slug,
+        description: input.description,
+        promptText: input.promptText,
+        category: { connect: { id: cId } },
+        ...(input.aiToolId ? { aiTool: { connect: { id: input.aiToolId } } } : {}),
+        contentType: input.contentType ?? 'IMAGE',
+        status: input.status ?? 'DRAFT',
+        publishedAt: input.status === 'PUBLISHED' ? new Date() : undefined,
+        sortOrder: input.sortOrder ?? 0,
+        isFeatured: input.isFeatured ?? false,
+        isTrending: input.isTrending ?? false,
+        isPremium: input.isPremium ?? false,
+        videoEnabled: input.videoEnabled ?? true,
+        ...(tags.length ? { tags: { create: tags.map((tag) => ({ tagId: tag.id })) } } : {}),
+      });
 
-    return prompt;
+      await recordAuditLog({
+        adminId,
+        action: AUDIT_ACTIONS.CREATE_PROMPT,
+        entityType: 'Prompt',
+        entityId: prompt.id,
+        ipAddress,
+      });
+
+      createdPrompts.push(prompt);
+    }
+
+    const primaryPrompt = createdPrompts[0];
+    return {
+      ...primaryPrompt,
+      createdIds: createdPrompts.map((p) => p.id),
+      createdCount: createdPrompts.length,
+    };
   },
 
   async update(id: string, input: Partial<PromptInput>, adminId: string, ipAddress?: string) {
     const existing = await promptRepository.findById(id);
     if (!existing) throw new NotFoundError('Prompt not found');
 
-    if (input.categoryId) await assertCategoryExists(input.categoryId);
+    const targetCategoryId = input.categoryId || (input.categoryIds && input.categoryIds[0]);
+    if (targetCategoryId) await assertCategoryExists(targetCategoryId);
     if (input.aiToolId) await assertAiToolExists(input.aiToolId);
 
     let slug = existing.slug;
@@ -110,12 +140,12 @@ export const promptService = {
       );
     }
 
-    const { tagSlugs: _tagSlugs, categoryId, aiToolId, ...rest } = input;
+    const { tagSlugs: _tagSlugs, categoryId: _cId, categoryIds: _cIds, aiToolId, ...rest } = input;
 
     const updated = await promptRepository.update(id, {
       ...rest,
       slug,
-      ...(categoryId ? { category: { connect: { id: categoryId } } } : {}),
+      ...(targetCategoryId ? { category: { connect: { id: targetCategoryId } } } : {}),
       ...(aiToolId !== undefined
         ? aiToolId
           ? { aiTool: { connect: { id: aiToolId } } }
@@ -313,7 +343,31 @@ export const promptService = {
   async getById(id: string) {
     const prompt = await promptRepository.findById(id);
     if (!prompt) throw new NotFoundError('Prompt not found');
-    return prompt;
+
+    const matchingPrompts = await prisma.prompt.findMany({
+      where: {
+        promptText: prompt.promptText,
+        OR: [{ deletedAt: null }, { deletedAt: { isSet: false } }],
+      },
+      select: {
+        category: true,
+      },
+    });
+
+    const categoryMap = new Map<string, any>();
+    if (prompt.category) {
+      categoryMap.set(prompt.category.id, prompt.category);
+    }
+    for (const m of matchingPrompts) {
+      if (m.category) {
+        categoryMap.set(m.category.id, m.category);
+      }
+    }
+
+    return {
+      ...prompt,
+      categories: Array.from(categoryMap.values()),
+    };
   },
 
   async list(params: {

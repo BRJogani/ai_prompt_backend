@@ -274,7 +274,7 @@ class AdminApp {
         renderPrompts(container, this, options);
         break;
       case 'prompt-editor':
-        renderPromptEditor(container, this, options.promptId);
+        renderPromptEditor(container, this, options);
         break;
       case 'categories':
         renderCategories(container, options);

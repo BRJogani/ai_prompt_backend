@@ -4,7 +4,7 @@ import { idSchema, paginationQuerySchema } from './common.validator';
 const contentTypeEnum = z.enum(['IMAGE', 'VIDEO', 'BOTH']);
 const promptStatusEnum = z.enum(['DRAFT', 'REVIEW', 'PUBLISHED', 'ARCHIVED']);
 
-export const createPromptSchema = z.object({
+export const basePromptSchema = z.object({
   title: z.string().max(200).optional(),
   slug: z
     .string()
@@ -14,7 +14,8 @@ export const createPromptSchema = z.object({
     .optional(),
   description: z.string().max(500).optional(),
   promptText: z.string().min(1, 'promptText is required'),
-  categoryId: idSchema,
+  categoryId: idSchema.optional(),
+  categoryIds: z.array(idSchema).min(1).optional(),
   aiToolId: idSchema.optional(),
   contentType: contentTypeEnum.default('IMAGE'),
   status: promptStatusEnum.optional(),
@@ -26,9 +27,14 @@ export const createPromptSchema = z.object({
   /** Tag names or slugs — resolved to Tag rows, creating any that don't exist yet. */
   tagSlugs: z.array(z.string().min(1)).max(20).optional(),
 });
+
+export const createPromptSchema = basePromptSchema.refine(
+  (data) => !!data.categoryId || (!!data.categoryIds && data.categoryIds.length > 0),
+  { message: 'At least one category is required' },
+);
 export type CreatePromptInput = z.infer<typeof createPromptSchema>;
 
-export const updatePromptSchema = createPromptSchema.partial();
+export const updatePromptSchema = basePromptSchema.partial();
 export type UpdatePromptInput = z.infer<typeof updatePromptSchema>;
 
 export const promptFlagsSchema = z
@@ -83,4 +89,3 @@ export const promptSearchQuerySchema = paginationQuerySchema.extend({
   q: z.string().min(1, 'q is required').max(200),
 });
 export type PromptSearchQuery = z.infer<typeof promptSearchQuerySchema>;
-

@@ -25,6 +25,11 @@ export const reportController = {
     const report = await reportService.updateStatus(req.params.id, req.body.status, req.admin!.id, req.ip);
     return sendSuccess(res, report, 'Report status updated');
   }),
+
+  adminUpdatePromptStatus: catchAsync(async (req: Request, res: Response) => {
+    const prompt = await reportService.updatePromptStatus(req.params.id, req.body.status, req.admin!.id, req.ip);
+    return sendSuccess(res, prompt, 'Prompt status updated from report');
+  }),
 };
 
 export default reportController;
