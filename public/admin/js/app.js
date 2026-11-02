@@ -73,93 +73,136 @@ class AdminApp {
 
     const admin = authState.admin || { name: 'Super Admin', email: 'admin@example.com', role: 'SUPER_ADMIN' };
 
+    // Generate initials (e.g., "Asad Waseem" -> "AS", "Super Admin" -> "SA")
+    const getInitials = (name) => {
+      if (!name) return 'AS';
+      const parts = name.trim().split(/\s+/);
+      if (parts.length >= 2) {
+        return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+      }
+      return name.slice(0, 2).toUpperCase();
+    };
+    const initials = getInitials(admin.name);
+
     this.root.innerHTML = `
       <div id="app-layout">
-        <!-- Sidebar -->
+        <!-- Floating Narrow Cyber-Slate Sidebar Drawer -->
         <aside class="sidebar">
-          <div class="sidebar-header">
-            <div class="logo-badge">
-              <i data-lucide="sparkles" style="width: 22px; height: 22px;"></i>
-            </div>
-            <div>
-              <div class="logo-title">Prompt Admin</div>
-              <div class="logo-subtitle">Control Center</div>
-            </div>
-          </div>
-
-          <div class="sidebar-nav">
-            <span class="nav-section-title">Core</span>
-            <a class="nav-item ${this.currentView === 'dashboard' ? 'active' : ''}" data-view="dashboard">
-              <i data-lucide="layout-dashboard" style="width: 18px; height: 18px;"></i>
-              <span>Dashboard</span>
-            </a>
-
-            <span class="nav-section-title">Content</span>
-            <a class="nav-item ${this.currentView === 'prompts' ? 'active' : ''}" data-view="prompts">
-              <i data-lucide="file-text" style="width: 18px; height: 18px;"></i>
-              <span>Prompts</span>
-            </a>
-            <a class="nav-item ${this.currentView === 'categories' ? 'active' : ''}" data-view="categories">
-              <i data-lucide="folder" style="width: 18px; height: 18px;"></i>
-              <span>Categories</span>
-            </a>
-            <a class="nav-item ${this.currentView === 'ai-tools' ? 'active' : ''}" data-view="ai-tools">
-              <i data-lucide="cpu" style="width: 18px; height: 18px;"></i>
-              <span>AI Tools</span>
-            </a>
-            <a class="nav-item ${this.currentView === 'tags' ? 'active' : ''}" data-view="tags">
-              <i data-lucide="tag" style="width: 18px; height: 18px;"></i>
-              <span>Tags</span>
-            </a>
-
-            <span class="nav-section-title">Mobile App</span>
-            <a class="nav-item ${this.currentView === 'app-config' ? 'active' : ''}" data-view="app-config">
-              <i data-lucide="sliders" style="width: 18px; height: 18px;"></i>
-              <span>App Settings</span>
-            </a>
-            <a class="nav-item ${this.currentView === 'ad-config' ? 'active' : ''}" data-view="ad-config">
-              <i data-lucide="dollar-sign" style="width: 18px; height: 18px;"></i>
-              <span>Ad Config</span>
-            </a>
-            <a class="nav-item ${this.currentView === 'store-listing' ? 'active' : ''}" data-view="store-listing">
-              <i data-lucide="play-circle" style="width: 18px; height: 18px;"></i>
-              <span>Play Store Listing</span>
-              <span class="nav-badge" style="background: rgba(16, 185, 129, 0.2); color: #34d399;">ASO</span>
-            </a>
-            <a class="nav-item ${this.currentView === 'purchases' ? 'active' : ''}" data-view="purchases">
-              <i data-lucide="crown" style="width: 18px; height: 18px;"></i>
-              <span>Purchases</span>
-              <span class="nav-badge" style="background: rgba(245, 158, 11, 0.2); color: #fbbf24;">IAP</span>
-            </a>
-
-            <span class="nav-section-title">Moderation & Staff</span>
-            <a class="nav-item ${this.currentView === 'reports' ? 'active' : ''}" data-view="reports">
-              <i data-lucide="flag" style="width: 18px; height: 18px;"></i>
-              <span>Reports</span>
-            </a>
-            <a class="nav-item ${this.currentView === 'admin-users' ? 'active' : ''}" data-view="admin-users">
-              <i data-lucide="users" style="width: 18px; height: 18px;"></i>
-              <span>Admin Staff</span>
-            </a>
-
-            <span class="nav-section-title">System</span>
-            <a class="nav-item ${this.currentView === 'audit-logs' ? 'active' : ''}" data-view="audit-logs">
-              <i data-lucide="shield" style="width: 18px; height: 18px;"></i>
-              <span>Audit Trail</span>
-            </a>
-          </div>
-
-          <div class="sidebar-footer">
-            <div class="user-profile">
-              <div class="user-avatar">${(admin.name || 'A')[0].toUpperCase()}</div>
-              <div class="user-info">
-                <span class="user-name">${admin.name || 'Admin'}</span>
-                <span class="user-role">${admin.role || 'SUPER_ADMIN'}</span>
+          <!-- Expanded Header -->
+          <div class="sidebar-header-expanded">
+            <div class="sidebar-brand">
+              <div class="logo-badge">
+                <i data-lucide="sparkles" style="width: 20px; height: 20px;"></i>
+              </div>
+              <div class="logo-text-group">
+                <div class="logo-title">Prompt Admin</div>
+                <div class="logo-subtitle">Control Center</div>
               </div>
             </div>
-            <button class="btn-icon" id="logout-btn" title="Sign Out">
+            <button id="drawer-collapse-btn" class="drawer-icon-btn" title="Collapse sidebar" aria-label="Collapse sidebar">
+              <i data-lucide="chevrons-left" style="width: 18px; height: 18px;"></i>
+            </button>
+          </div>
+
+          <!-- Collapsed Header -->
+          <div class="sidebar-header-collapsed">
+            <div class="logo-badge" title="Prompt Admin &bull; Control Center">
+              <i data-lucide="sparkles" style="width: 20px; height: 20px;"></i>
+            </div>
+            <button id="drawer-expand-btn" class="drawer-icon-btn" title="Expand sidebar" aria-label="Expand sidebar">
+              <i data-lucide="chevrons-right" style="width: 18px; height: 18px;"></i>
+            </button>
+          </div>
+
+          <!-- Navigation Links -->
+          <div class="sidebar-nav">
+            <a class="nav-item ${this.currentView === 'dashboard' ? 'active' : ''}" data-view="dashboard" data-tooltip="Dashboard" title="Dashboard">
+              <i data-lucide="home" style="width: 19px; height: 19px;"></i>
+              <span class="nav-label">Dashboard</span>
+            </a>
+
+            <a class="nav-item ${this.currentView === 'prompts' ? 'active' : ''}" data-view="prompts" data-tooltip="Prompts" title="Prompts">
+              <i data-lucide="file-text" style="width: 19px; height: 19px;"></i>
+              <span class="nav-label">Prompts</span>
+            </a>
+
+            <a class="nav-item ${this.currentView === 'categories' ? 'active' : ''}" data-view="categories" data-tooltip="Categories" title="Categories">
+              <i data-lucide="folder" style="width: 19px; height: 19px;"></i>
+              <span class="nav-label">Categories</span>
+            </a>
+
+            <a class="nav-item ${this.currentView === 'ai-tools' ? 'active' : ''}" data-view="ai-tools" data-tooltip="AI Tools" title="AI Tools">
+              <i data-lucide="cpu" style="width: 19px; height: 19px;"></i>
+              <span class="nav-label">AI Tools</span>
+            </a>
+
+            <a class="nav-item ${this.currentView === 'tags' ? 'active' : ''}" data-view="tags" data-tooltip="Tags" title="Tags">
+              <i data-lucide="tag" style="width: 19px; height: 19px;"></i>
+              <span class="nav-label">Tags</span>
+            </a>
+
+            <a class="nav-item ${this.currentView === 'admin-users' ? 'active' : ''}" data-view="admin-users" data-tooltip="Users" title="Users">
+              <i data-lucide="users" style="width: 19px; height: 19px;"></i>
+              <span class="nav-label">Users</span>
+            </a>
+
+            <!-- APPS Section Divider -->
+            <span class="nav-section-title">APPS</span>
+
+            <a class="nav-item ${this.currentView === 'reports' ? 'active' : ''}" data-view="reports" data-tooltip="Reports" title="Reports">
+              <i data-lucide="flag" style="width: 19px; height: 19px;"></i>
+              <span class="nav-label">Reports</span>
+              <span class="nav-badge reports-badge" style="display: none;"></span>
+              <span class="nav-corner-badge reports-corner-badge" style="display: none;"></span>
+            </a>
+
+            <a class="nav-item ${this.currentView === 'app-config' ? 'active' : ''}" data-view="app-config" data-tooltip="Settings" title="Settings">
+              <i data-lucide="settings" style="width: 19px; height: 19px;"></i>
+              <span class="nav-label">Settings</span>
+            </a>
+
+            <a class="nav-item ${this.currentView === 'ad-config' ? 'active' : ''}" data-view="ad-config" data-tooltip="Ad Config" title="Ad Config">
+              <i data-lucide="link" style="width: 19px; height: 19px;"></i>
+              <span class="nav-label">Ad Config</span>
+            </a>
+
+            <a class="nav-item ${this.currentView === 'store-listing' ? 'active' : ''}" data-view="store-listing" data-tooltip="Play Store Listing" title="Play Store Listing">
+              <i data-lucide="play-circle" style="width: 19px; height: 19px;"></i>
+              <span class="nav-label">Play Store Listing</span>
+              <span class="nav-badge badge-aso">ASO</span>
+            </a>
+
+            <a class="nav-item ${this.currentView === 'purchases' ? 'active' : ''}" data-view="purchases" data-tooltip="Purchases" title="Purchases">
+              <i data-lucide="crown" style="width: 19px; height: 19px;"></i>
+              <span class="nav-label">Purchases</span>
+              <span class="nav-badge badge-iap">IAP</span>
+            </a>
+
+            <a class="nav-item ${this.currentView === 'audit-logs' ? 'active' : ''}" data-view="audit-logs" data-tooltip="Audit Trail" title="Audit Trail">
+              <i data-lucide="shield" style="width: 19px; height: 19px;"></i>
+              <span class="nav-label">Audit Trail</span>
+            </a>
+          </div>
+
+          <!-- Expanded Footer Profile -->
+          <div class="sidebar-footer-expanded">
+            <div class="drawer-user-card">
+              <div class="drawer-avatar">${initials}</div>
+              <div class="drawer-user-info">
+                <span class="drawer-user-name" title="${admin.name || 'Admin'}">${admin.name || 'Admin'}</span>
+                <span class="drawer-user-role">${admin.role || 'Admin'}</span>
+              </div>
+            </div>
+            <button class="drawer-logout-btn" id="logout-btn" title="Sign Out" aria-label="Sign Out">
               <i data-lucide="log-out" style="width: 16px; height: 16px;"></i>
             </button>
+          </div>
+
+          <!-- Collapsed Footer Profile -->
+          <div class="sidebar-footer-collapsed">
+            <div class="drawer-avatar drawer-avatar-collapsed" id="collapsed-avatar-btn" title="Sign Out (${admin.name || 'Admin'})">
+              ${initials}
+            </div>
           </div>
         </aside>
 
@@ -200,18 +243,31 @@ class AdminApp {
     const sidebar = this.root.querySelector('.sidebar');
     const mobileBackdrop = this.root.querySelector('#mobile-sidebar-backdrop');
     const toggleBtn = this.root.querySelector('#sidebar-toggle-btn');
+    const collapseBtn = this.root.querySelector('#drawer-collapse-btn');
+    const expandBtn = this.root.querySelector('#drawer-expand-btn');
+    const collapsedAvatarBtn = this.root.querySelector('#collapsed-avatar-btn');
 
-    // Restore desktop preference
+    // Desktop: default to narrow collapsed state unless explicitly expanded ('false')
     const isDesktop = () => window.innerWidth >= 900;
-    if (isDesktop() && localStorage.getItem('admin_sidebar_collapsed') === 'true') {
+    const storedPref = localStorage.getItem('admin_sidebar_collapsed');
+    if (isDesktop() && storedPref !== 'false') {
       appLayout?.classList.add('sidebar-collapsed');
     }
 
+    const setCollapsed = (collapsed) => {
+      if (collapsed) {
+        appLayout?.classList.add('sidebar-collapsed');
+        localStorage.setItem('admin_sidebar_collapsed', 'true');
+      } else {
+        appLayout?.classList.remove('sidebar-collapsed');
+        localStorage.setItem('admin_sidebar_collapsed', 'false');
+      }
+    };
+
     const toggleSidebar = () => {
       if (isDesktop()) {
-        appLayout?.classList.toggle('sidebar-collapsed');
-        const collapsed = appLayout?.classList.contains('sidebar-collapsed');
-        localStorage.setItem('admin_sidebar_collapsed', collapsed ? 'true' : 'false');
+        const willCollapse = !appLayout?.classList.contains('sidebar-collapsed');
+        setCollapsed(willCollapse);
       } else {
         sidebar?.classList.toggle('mobile-open');
         mobileBackdrop?.classList.toggle('active');
@@ -228,6 +284,16 @@ class AdminApp {
       toggleSidebar();
     });
 
+    collapseBtn?.addEventListener('click', (e) => {
+      e.preventDefault();
+      setCollapsed(true);
+    });
+
+    expandBtn?.addEventListener('click', (e) => {
+      e.preventDefault();
+      setCollapsed(false);
+    });
+
     mobileBackdrop?.addEventListener('click', closeMobileSidebar);
 
     // Bind sidebar item clicks
@@ -240,12 +306,30 @@ class AdminApp {
       });
     });
 
-    // Bind logout button
-    this.root.querySelector('#logout-btn')?.addEventListener('click', () => {
+    // Bind logout buttons
+    const handleSignOut = () => {
       authState.clear();
       toast.info('Signed out successfully');
       this.render();
-    });
+    };
+
+    this.root.querySelector('#logout-btn')?.addEventListener('click', handleSignOut);
+    collapsedAvatarBtn?.addEventListener('click', handleSignOut);
+
+    // Fetch pending reports count to populate badge
+    api.getReports({ status: 'PENDING', limit: 1 }).then((res) => {
+      const count = res?.meta?.total || 0;
+      if (count > 0) {
+        this.root.querySelectorAll('.reports-badge').forEach((b) => {
+          b.textContent = count;
+          b.style.display = 'inline-flex';
+        });
+        this.root.querySelectorAll('.reports-corner-badge').forEach((b) => {
+          b.textContent = count;
+          b.style.display = 'flex';
+        });
+      }
+    }).catch(() => {});
 
     // Bind API Docs link to include current session token
     const apiDocsLink = this.root.querySelector('#top-nav-api-docs');
